@@ -1,0 +1,1745 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<title>OptiSpend AI</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=DM+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+<style>
+:root {
+  --bg: #0d0d0f;
+  --s1: #161618;
+  --s2: #1e1f22;
+  --s3: #26272b;
+  --s4: #303236;
+  --accent: #8ab4f8;
+  --mint: #c4eed0;
+  --danger: #ff6b6b;
+  --warn: #ffd166;
+  --purple: #c77dff;
+  --emerald: #06d6a0;
+  --text: #f0f2f6;
+  --t2: #9aa0a6;
+  --t3: #5f6368;
+  --r: 22px;
+  --r2: 14px;
+  --r3: 50px;
+  --safe: 390px;
+}
+*,*::before,*::after { box-sizing:border-box; margin:0; padding:0; -webkit-tap-highlight-color:transparent; }
+html,body {
+  font-family:'DM Sans',sans-serif;
+  background:var(--bg);
+  color:var(--text);
+  height:100%;
+  overflow:hidden;
+}
+body { display:flex; justify-content:center; align-items:center; }
+
+/* ── Phone shell ── */
+#app {
+  width:min(390px,100vw);
+  height:min(844px,100vh);
+  background:var(--bg);
+  position:relative;
+  overflow:hidden;
+  border-radius:min(44px,0px);
+  box-shadow:0 0 0 1px rgba(255,255,255,0.06),0 40px 80px rgba(0,0,0,0.6);
+}
+@media(max-width:430px){
+  #app{ border-radius:0; height:100vh; box-shadow:none; }
+}
+
+/* ── Screen system ── */
+.screen {
+  position:absolute;
+  inset:0;
+  overflow-y:auto;
+  overflow-x:hidden;
+  display:none;
+  flex-direction:column;
+  scrollbar-width:none;
+  padding-bottom:80px;
+  background:var(--bg);
+}
+.screen::-webkit-scrollbar { display:none; }
+.screen.active { display:flex; animation:fadeUp .32s cubic-bezier(.16,1,.3,1); }
+@keyframes fadeUp {
+  from { opacity:0; transform:translateY(14px); }
+  to   { opacity:1; transform:translateY(0); }
+}
+
+/* ── Status bar ── */
+.status-bar {
+  display:flex; justify-content:space-between; align-items:center;
+  padding:14px 24px 6px;
+  font-size:12px; font-weight:600; color:var(--text);
+  flex-shrink:0;
+  position:sticky; top:0; z-index:10;
+  background:linear-gradient(to bottom,var(--bg) 80%,transparent);
+}
+.status-icons { display:flex; gap:6px; align-items:center; }
+
+/* ── Bottom nav ── */
+#bottom-nav {
+  position:absolute; bottom:0; left:0; right:0;
+  background:rgba(13,13,15,.95);
+  backdrop-filter:blur(20px);
+  border-top:1px solid rgba(255,255,255,.06);
+  display:flex;
+  z-index:100;
+  padding-bottom:max(16px,env(safe-area-inset-bottom));
+}
+.nav-btn {
+  flex:1; background:none; border:none; cursor:pointer;
+  display:flex; flex-direction:column; align-items:center;
+  gap:3px; padding:10px 4px 2px;
+  color:var(--t3); transition:all .2s;
+  position:relative;
+}
+.nav-btn .n-icon { font-size:22px; transition:transform .2s; }
+.nav-btn .n-lbl  { font-size:10px; font-weight:500; transition:color .2s; }
+.nav-btn.active  { color:var(--accent); }
+.nav-btn.active .n-icon { transform:translateY(-2px); }
+.nav-btn::before {
+  content:''; position:absolute; top:0; left:50%; transform:translateX(-50%);
+  width:0; height:2px; background:var(--accent); border-radius:0 0 2px 2px;
+  transition:width .25s cubic-bezier(.16,1,.3,1);
+}
+.nav-btn.active::before { width:28px; }
+.nav-btn:active .n-icon { transform:scale(.85) translateY(-2px); }
+
+/* ── Typography ── */
+.serif { font-family:'DM Serif Display',serif; }
+.page-eyebrow {
+  font-size:10px; font-weight:600; letter-spacing:2.5px;
+  text-transform:uppercase; color:var(--t3); margin-bottom:6px;
+}
+.page-title {
+  font-family:'DM Serif Display',serif;
+  font-size:30px; line-height:1.15; color:var(--text);
+}
+.page-sub { font-size:13px; color:var(--t2); line-height:1.6; margin-top:6px; }
+
+/* ── Cards ── */
+.card {
+  background:var(--s1);
+  border:1px solid rgba(255,255,255,.06);
+  border-radius:var(--r);
+  padding:20px;
+}
+.card-sm {
+  background:var(--s1);
+  border:1px solid rgba(255,255,255,.06);
+  border-radius:var(--r2);
+  padding:14px 16px;
+}
+
+/* ── Buttons ── */
+.btn {
+  display:inline-flex; align-items:center; justify-content:center; gap:7px;
+  padding:14px 24px; border-radius:var(--r3);
+  font-family:'DM Sans',sans-serif; font-size:15px; font-weight:600;
+  cursor:pointer; border:none; transition:all .2s; width:100%;
+}
+.btn:active { transform:scale(.97); }
+.btn-primary { background:var(--accent); color:#061020; }
+.btn-primary:active { background:#a8c8ff; }
+.btn-ghost {
+  background:rgba(255,255,255,.08);
+  border:1px solid rgba(255,255,255,.14);
+  color:var(--text);
+  backdrop-filter:blur(10px);
+}
+.btn-ghost:active { background:rgba(255,255,255,.14); }
+.btn-danger { background:rgba(255,107,107,.15); border:1px solid rgba(255,107,107,.3); color:var(--danger); }
+.btn-mint   { background:rgba(196,238,208,.15); border:1px solid rgba(196,238,208,.3); color:var(--mint); }
+.btn-sm {
+  padding:8px 16px; font-size:13px; font-weight:600;
+  border-radius:50px; cursor:pointer; border:none;
+  transition:all .2s; font-family:'DM Sans',sans-serif;
+}
+.btn-sm:active { transform:scale(.95); }
+
+/* ── Inputs ── */
+.inp {
+  width:100%; padding:14px 18px;
+  background:var(--s2); border:1.5px solid rgba(255,255,255,.08);
+  border-radius:var(--r2); color:var(--text);
+  font-family:'DM Sans',sans-serif; font-size:14px;
+  outline:none; transition:border-color .2s, box-shadow .2s;
+  appearance:none;
+}
+.inp:focus { border-color:var(--accent); box-shadow:0 0 0 3px rgba(138,180,248,.12); }
+.inp::placeholder { color:var(--t3); }
+.inp-label { font-size:11px; color:var(--t2); font-weight:600; letter-spacing:.5px; margin-bottom:6px; display:block; text-transform:uppercase; }
+
+/* ── Misc ── */
+.row { display:flex; gap:12px; }
+.col { flex:1; }
+.divider { height:1px; background:rgba(255,255,255,.06); margin:16px 0; }
+.tag {
+  display:inline-flex; align-items:center; gap:5px;
+  padding:4px 10px; border-radius:8px;
+  font-size:10px; font-weight:700; letter-spacing:.5px; text-transform:uppercase;
+}
+.pill {
+  display:inline-flex; align-items:center; gap:5px;
+  padding:6px 14px; border-radius:50px;
+  font-size:12px; font-weight:600;
+  cursor:pointer; transition:all .2s; border:none;
+  font-family:'DM Sans',sans-serif;
+}
+.pill:active { transform:scale(.95); }
+
+/* ── Section header ── */
+.sec-hdr {
+  display:flex; justify-content:space-between; align-items:center;
+  margin-bottom:14px; padding:0 20px;
+}
+.sec-hdr h2 { font-size:17px; font-weight:700; }
+.sec-hdr a  { font-size:12px; color:var(--accent); cursor:pointer; font-weight:500; }
+
+/* ── Scroll row ── */
+.scroll-row {
+  display:flex; gap:12px; overflow-x:auto; padding:0 20px 4px;
+  scrollbar-width:none; scroll-snap-type:x mandatory;
+}
+.scroll-row::-webkit-scrollbar { display:none; }
+.scroll-row > * { scroll-snap-align:start; flex-shrink:0; }
+
+/* ─────────────────────────────── LOGIN ─────────────────────────────── */
+#login-screen { padding-bottom:0; }
+.login-hero {
+  position:relative; height:400px; flex-shrink:0;
+  background:url('https://images.unsplash.com/photo-1501854140801-50d01698950b?w=800&q=85') center/cover no-repeat;
+  display:flex; flex-direction:column; align-items:center;
+}
+.login-hero::after {
+  content:'';
+  position:absolute; inset:0;
+  background:linear-gradient(180deg,rgba(13,13,15,0) 0%,rgba(13,13,15,.5) 50%,#0d0d0f 100%);
+}
+.login-hero-content { position:relative; z-index:1; text-align:center; padding:0 28px; margin-top:auto; padding-bottom:0; }
+.login-logo-txt { font-size:11px; font-weight:600; letter-spacing:5px; text-transform:uppercase; color:rgba(255,255,255,.4); margin-bottom:20px; }
+.login-tagline { font-family:'DM Serif Display',serif; font-size:40px; line-height:1.1; color:#fff; text-shadow:0 4px 32px rgba(0,0,0,.5); }
+.login-tagline em { font-style:italic; color:var(--mint); }
+.login-stats { display:flex; gap:0; margin-top:24px; background:rgba(255,255,255,.07); border-radius:18px; padding:14px 0; border:1px solid rgba(255,255,255,.1); }
+.l-stat { flex:1; text-align:center; }
+.l-stat:not(:last-child) { border-right:1px solid rgba(255,255,255,.1); }
+.l-stat-val { font-size:20px; font-weight:700; }
+.l-stat-lbl { font-size:10px; color:rgba(255,255,255,.4); margin-top:2px; }
+
+.login-form { padding:0 20px 32px; }
+.login-tabs { display:flex; background:var(--s2); border-radius:14px; padding:4px; gap:4px; margin-bottom:22px; }
+.login-tab {
+  flex:1; padding:10px; border:none; border-radius:10px; cursor:pointer;
+  font-family:'DM Sans',sans-serif; font-size:14px; font-weight:600;
+  background:transparent; color:var(--t2); transition:all .2s;
+}
+.login-tab.active { background:var(--s3); color:var(--text); }
+.login-tab:active { transform:scale(.98); }
+.form-group { margin-bottom:14px; }
+
+/* ─────────────────────────────── HOME ─────────────────────────────── */
+.home-header {
+  padding:52px 20px 16px;
+  background:linear-gradient(160deg,rgba(138,180,248,.07) 0%,transparent 60%);
+}
+.home-top { display:flex; justify-content:space-between; align-items:flex-start; margin-bottom:16px; }
+.greeting-sub { font-size:12px; color:var(--t2); margin-bottom:5px; display:flex; align-items:center; gap:6px; }
+.greeting-name { font-family:'DM Serif Display',serif; font-size:32px; line-height:1.1; }
+.avatar {
+  width:46px; height:46px; border-radius:50%;
+  background:linear-gradient(135deg,var(--accent),var(--mint));
+  display:flex; align-items:center; justify-content:center;
+  font-weight:700; font-size:18px; color:#061020;
+  box-shadow:0 4px 20px rgba(138,180,248,.3); cursor:pointer;
+  flex-shrink:0;
+}
+.kpi-row { display:grid; grid-template-columns:repeat(3,1fr); gap:8px; margin-bottom:8px; }
+.kpi-card {
+  background:var(--s1); border:1px solid rgba(255,255,255,.06);
+  border-radius:18px; padding:14px 12px; text-align:center;
+}
+.kpi-icon { font-size:18px; margin-bottom:6px; }
+.kpi-val  { font-size:16px; font-weight:700; line-height:1; }
+.kpi-lbl  { font-size:9px; color:var(--t2); margin-top:4px; text-transform:uppercase; letter-spacing:.5px; }
+
+/* Search bar */
+.search-bar {
+  margin:0 20px 20px; display:flex; align-items:center; gap:10px;
+  background:var(--s2); border:1.5px solid rgba(255,255,255,.08);
+  border-radius:50px; padding:13px 18px; cursor:text;
+  transition:border-color .2s;
+}
+.search-bar:focus-within, .search-bar.focused { border-color:var(--accent); }
+.search-bar input { background:none; border:none; outline:none; color:var(--text); font-family:'DM Sans',sans-serif; font-size:14px; flex:1; }
+.search-bar input::placeholder { color:var(--t3); }
+
+/* Opt match cards */
+.opt-card {
+  width:270px; border-radius:var(--r); padding:20px;
+  border:1px solid rgba(255,255,255,.07);
+  cursor:pointer; transition:transform .2s;
+  display:flex; flex-direction:column; gap:10px;
+}
+.opt-card:active { transform:scale(.98); }
+.opt-card-body { font-size:12px; color:var(--t2); line-height:1.55; }
+.opt-card-saving { font-size:13px; font-weight:700; margin-top:4px; }
+.opt-action-btn {
+  padding:9px 16px; border-radius:50px; font-size:12px; font-weight:700;
+  cursor:pointer; border:none; font-family:'DM Sans',sans-serif;
+  transition:all .2s; display:inline-flex; align-items:center; gap:5px;
+  align-self:flex-start;
+}
+.opt-action-btn:active { transform:scale(.95); }
+
+/* DNA grid */
+.dna-grid { display:grid; grid-template-columns:1fr 1fr; gap:10px; padding:0 20px; }
+.dna-card {
+  border-radius:20px; overflow:hidden; position:relative;
+  height:150px; cursor:pointer;
+}
+.dna-card:active { transform:scale(.98); }
+.dna-img { position:absolute; inset:0; background-size:cover; background-position:center; transition:transform .3s; }
+.dna-card:active .dna-img { transform:scale(1.03); }
+.dna-overlay { position:absolute; inset:0; background:linear-gradient(180deg,rgba(0,0,0,0) 30%,rgba(0,0,0,.78) 100%); }
+.dna-score { position:absolute; top:10px; right:10px; background:rgba(0,0,0,.5); backdrop-filter:blur(8px); border:1px solid rgba(255,255,255,.15); border-radius:8px; padding:3px 8px; font-size:10px; font-weight:700; }
+.dna-bottom { position:absolute; bottom:10px; left:12px; }
+.dna-cat { font-size:10px; color:rgba(255,255,255,.6); margin-bottom:2px; }
+.dna-amt { font-size:19px; font-weight:700; color:#fff; }
+
+/* Activity */
+.act-item {
+  display:flex; align-items:center; gap:12px;
+  padding:13px 20px; border-bottom:1px solid rgba(255,255,255,.04);
+  transition:background .15s; cursor:pointer;
+}
+.act-item:active { background:rgba(255,255,255,.03); }
+.act-icon { width:38px; height:38px; border-radius:12px; display:flex; align-items:center; justify-content:center; font-size:17px; flex-shrink:0; }
+.act-body { flex:1; min-width:0; }
+.act-title { font-size:13px; font-weight:600; }
+.act-sub { font-size:11px; color:var(--t2); margin-top:2px; }
+.act-time { font-size:10px; color:var(--t3); white-space:nowrap; }
+
+/* ─────────────────────────────── PRICE ─────────────────────────────── */
+.price-result {
+  margin:0 20px 10px;
+  background:var(--s1); border:1px solid rgba(255,255,255,.07);
+  border-radius:var(--r); padding:16px 18px;
+  display:flex; align-items:center; gap:14px;
+  cursor:pointer; transition:all .2s; position:relative;
+}
+.price-result:active { transform:scale(.99); }
+.price-result.best  { border-color:rgba(196,238,208,.35); background:linear-gradient(135deg,rgba(196,238,208,.04),var(--s1)); }
+.price-result.scam  { border-color:rgba(255,107,107,.25); background:linear-gradient(135deg,rgba(255,107,107,.04),var(--s1)); }
+.plat-logo { width:48px; height:48px; border-radius:14px; background:var(--s2); display:flex; align-items:center; justify-content:center; font-size:24px; flex-shrink:0; }
+.price-info { flex:1; min-width:0; }
+.plat-name { font-size:12px; color:var(--t2); margin-bottom:2px; }
+.price-num { font-size:22px; font-weight:700; }
+.price-orig { font-size:11px; color:var(--t3); text-decoration:line-through; }
+.price-discount { font-size:11px; color:var(--mint); margin-left:5px; }
+.trust-badge { padding:5px 10px; border-radius:9px; font-size:11px; font-weight:700; }
+.best-label {
+  position:absolute; top:-8px; right:14px;
+  background:var(--mint); color:#0a2010;
+  font-size:9px; font-weight:800; padding:3px 9px; border-radius:6px; letter-spacing:.5px;
+}
+
+/* ─────────────────────────────── SUBS ─────────────────────────────── */
+.sub-summary {
+  margin:0 20px 16px;
+  background:linear-gradient(135deg,#0d1f3c,var(--s1));
+  border:1px solid rgba(138,180,248,.18); border-radius:var(--r); padding:22px;
+}
+.sub-item {
+  margin:0 20px 8px;
+  background:var(--s1); border:1px solid rgba(255,255,255,.06);
+  border-radius:20px; padding:15px 16px;
+  display:flex; align-items:center; gap:12px;
+  cursor:pointer; transition:all .2s;
+}
+.sub-item:active { transform:scale(.99); background:var(--s2); }
+.sub-item.zombie { border-color:rgba(255,107,107,.22); background:linear-gradient(135deg,rgba(255,107,107,.04),var(--s1)); }
+.sub-item.trial  { border-color:rgba(255,209,102,.22); background:linear-gradient(135deg,rgba(255,209,102,.04),var(--s1)); }
+.sub-logo { width:46px; height:46px; border-radius:14px; display:flex; align-items:center; justify-content:center; font-size:22px; flex-shrink:0; }
+.sub-info { flex:1; min-width:0; }
+.sub-name { font-size:14px; font-weight:600; }
+.sub-meta { font-size:11px; color:var(--t2); margin-top:2px; }
+.sub-badge { display:inline-flex; align-items:center; gap:3px; font-size:9px; font-weight:700; padding:2px 7px; border-radius:5px; margin-top:4px; }
+.sub-price { text-align:right; }
+.sub-amt { font-size:17px; font-weight:700; }
+.sub-cycle { font-size:10px; color:var(--t2); margin-top:2px; }
+.sub-actions { display:none; margin:0 20px 12px; gap:8px; animation:slideDown .2s ease; }
+.sub-actions.open { display:flex; }
+@keyframes slideDown { from{opacity:0;transform:translateY(-6px)} to{opacity:1;transform:translateY(0)} }
+
+/* filter chips */
+.filter-row { display:flex; gap:8px; padding:0 20px 14px; overflow-x:auto; scrollbar-width:none; }
+.filter-row::-webkit-scrollbar{display:none;}
+.fchip {
+  padding:7px 16px; border-radius:50px; white-space:nowrap;
+  font-size:12px; font-weight:600; cursor:pointer; border:none;
+  font-family:'DM Sans',sans-serif; transition:all .2s;
+  background:var(--s2); color:var(--t2);
+  border:1px solid rgba(255,255,255,.07);
+}
+.fchip.active { background:var(--accent); color:#061020; border-color:var(--accent); }
+.fchip:active { transform:scale(.96); }
+
+/* ─────────────────────────────── ANALYTICS ─────────────────────────────── */
+.mood-card { margin:0 20px 16px; background:var(--s1); border:1px solid rgba(255,255,255,.06); border-radius:var(--r); padding:22px; }
+.mood-score { font-family:'DM Serif Display',serif; font-size:60px; line-height:1; }
+.mood-bar-track { height:8px; background:var(--s2); border-radius:4px; overflow:hidden; margin-top:14px; }
+.mood-bar-fill { height:100%; border-radius:4px; background:linear-gradient(90deg,var(--danger),var(--warn),var(--mint)); transition:width 1.2s cubic-bezier(.16,1,.3,1); }
+.mood-labels { display:flex; justify-content:space-between; margin-top:5px; }
+.mood-labels span { font-size:9px; color:var(--t3); }
+
+.chart-card { margin:0 20px 16px; background:var(--s1); border:1px solid rgba(255,255,255,.06); border-radius:var(--r); padding:20px; }
+.chart-title { font-size:15px; font-weight:700; margin-bottom:16px; }
+
+.cat-row { display:flex; align-items:center; gap:10px; margin-bottom:9px; }
+.cat-icon { font-size:18px; width:26px; text-align:center; flex-shrink:0; }
+.cat-bar-wrap { flex:1; }
+.cat-bar-labels { display:flex; justify-content:space-between; margin-bottom:4px; }
+.cat-name { font-size:12px; font-weight:500; }
+.cat-amt  { font-size:12px; font-weight:700; }
+.cat-bar-track { height:5px; background:var(--s2); border-radius:3px; overflow:hidden; }
+.cat-bar { height:100%; border-radius:3px; transition:width 1s ease; }
+.cat-pct { font-size:11px; color:var(--t3); min-width:28px; text-align:right; }
+
+.insight-card {
+  margin:0 20px 8px; background:var(--s1);
+  border-radius:var(--r); padding:16px 18px;
+  display:flex; align-items:flex-start; gap:12px;
+  cursor:pointer; border-left:3px solid transparent;
+  transition:all .2s;
+}
+.insight-card:active { transform:translateX(4px); }
+.ins-ico { font-size:24px; flex-shrink:0; margin-top:1px; }
+.ins-title { font-size:13px; font-weight:700; margin-bottom:4px; }
+.ins-body  { font-size:12px; color:var(--t2); line-height:1.6; }
+.ins-fix { margin-left:auto; padding:6px 14px; border-radius:50px; font-size:11px; font-weight:700; border:none; cursor:pointer; font-family:'DM Sans',sans-serif; flex-shrink:0; transition:all .2s; }
+.ins-fix:active { transform:scale(.95); }
+
+/* ─────────────────────────────── PROFILE ─────────────────────────────── */
+.profile-hero { margin:0 20px 16px; background:var(--s1); border:1px solid rgba(255,255,255,.07); border-radius:var(--r); padding:22px; display:flex; align-items:center; gap:16px; }
+.profile-av { width:62px; height:62px; border-radius:18px; background:linear-gradient(135deg,var(--accent),var(--mint)); display:flex; align-items:center; justify-content:center; font-weight:700; font-size:24px; color:#061020; flex-shrink:0; box-shadow:0 6px 20px rgba(138,180,248,.28); }
+.profile-name { font-size:20px; font-weight:700; }
+.profile-detail { font-size:12px; color:var(--t2); margin-top:3px; }
+
+.savings-hero { margin:0 20px 16px; background:linear-gradient(135deg,#0d1f12,var(--s1)); border:1px solid rgba(196,238,208,.2); border-radius:var(--r); padding:22px; display:flex; justify-content:space-between; align-items:center; }
+.savings-num { font-family:'DM Serif Display',serif; font-size:38px; color:var(--mint); line-height:1; }
+
+.prof-btn {
+  margin:0 20px 8px; background:rgba(122,146,165,.1);
+  border-radius:16px; padding:15px 16px;
+  display:flex; align-items:center; gap:12px;
+  cursor:pointer; transition:all .2s;
+  border:1px solid transparent;
+}
+.prof-btn:active { background:rgba(122,146,165,.18); border-color:rgba(255,255,255,.08); }
+.prof-btn-icon { font-size:20px; width:26px; text-align:center; }
+.prof-btn-text { flex:1; }
+.prof-btn-title { font-size:14px; font-weight:500; }
+.prof-btn-sub { font-size:11px; color:var(--t2); margin-top:2px; }
+.prof-chevron { color:var(--t3); font-size:16px; }
+
+.toggle-row { margin:0 20px 8px; background:rgba(122,146,165,.1); border-radius:16px; padding:14px 16px; display:flex; align-items:center; gap:12px; }
+.toggle { width:44px; height:26px; border-radius:13px; background:var(--s3); position:relative; cursor:pointer; transition:background .3s; flex-shrink:0; border:none; }
+.toggle.on { background:var(--mint); }
+.toggle-thumb { position:absolute; width:20px; height:20px; border-radius:50%; background:#fff; top:3px; left:3px; transition:left .25s cubic-bezier(.16,1,.3,1); }
+.toggle.on .toggle-thumb { left:21px; }
+
+/* ─────────────────────────────── MODALS ─────────────────────────────── */
+.modal-bg {
+  display:none; position:absolute; inset:0; background:rgba(0,0,0,.6);
+  backdrop-filter:blur(8px); z-index:200;
+  align-items:flex-end; justify-content:center;
+}
+.modal-bg.open { display:flex; }
+.modal-sheet {
+  background:var(--s1); border-radius:28px 28px 0 0;
+  width:100%; padding:24px 20px 40px;
+  animation:sheetUp .4s cubic-bezier(.16,1,.3,1);
+  max-height:85vh; overflow-y:auto;
+}
+.modal-sheet::-webkit-scrollbar{display:none;}
+@keyframes sheetUp { from{transform:translateY(100%)} to{transform:translateY(0)} }
+.sheet-handle { width:40px; height:4px; background:rgba(255,255,255,.18); border-radius:2px; margin:0 auto 22px; }
+.sheet-title { font-family:'DM Serif Display',serif; font-size:24px; margin-bottom:6px; }
+.sheet-sub   { font-size:13px; color:var(--t2); line-height:1.6; margin-bottom:22px; }
+
+/* ─────────────────────────────── TOAST ─────────────────────────────── */
+#toast {
+  position:absolute; bottom:96px; left:50%; transform:translateX(-50%) translateY(10px);
+  background:var(--s3); border-radius:50px; padding:10px 20px;
+  font-size:13px; font-weight:500; opacity:0; transition:all .3s;
+  z-index:300; white-space:nowrap; pointer-events:none;
+  border:1px solid rgba(255,255,255,.1);
+  max-width:85%;
+}
+#toast.show { opacity:1; transform:translateX(-50%) translateY(0); }
+#toast.success { background:rgba(196,238,208,.15); border-color:rgba(196,238,208,.3); color:var(--mint); }
+#toast.error   { background:rgba(255,107,107,.15);  border-color:rgba(255,107,107,.3);  color:var(--danger); }
+#toast.info    { background:rgba(138,180,248,.15);  border-color:rgba(138,180,248,.3);  color:var(--accent); }
+
+/* ─────────────────────────────── SCAM RESULT ─────────────────────────────── */
+.scam-box { border-radius:var(--r); padding:20px; margin:12px 0; }
+.scam-header { display:flex; align-items:center; gap:12px; margin-bottom:16px; }
+.scam-big-icon { font-size:38px; }
+.scam-status { font-size:15px; font-weight:700; }
+.scam-score  { font-size:12px; color:var(--t2); margin-top:3px; }
+.scam-row { display:flex; justify-content:space-between; align-items:center; padding:9px 12px; background:var(--s2); border-radius:10px; margin-bottom:5px; }
+.scam-row-l { font-size:12px; color:var(--t2); }
+.scam-row-r { font-size:12px; font-weight:700; }
+
+/* ─────────────────────────────── NEGOTIATION ─────────────────────────────── */
+.neg-card { margin:0 20px 10px; background:var(--s1); border:1px solid rgba(255,255,255,.06); border-radius:var(--r); overflow:hidden; cursor:pointer; transition:all .2s; }
+.neg-card:active{transform:scale(.99);}
+.neg-head { display:flex; align-items:center; gap:12px; padding:16px; }
+.neg-body { padding:0 16px 16px; font-size:13px; color:var(--text); line-height:1.8; font-style:italic; border-left:3px solid var(--accent); margin:0 16px 16px; border-radius:0 8px 8px 0; background:var(--s2); padding:14px 16px; display:none; }
+.neg-body.open { display:block; animation:slideDown .2s ease; }
+
+/* Responsive adjustments for actual mobile */
+@media(max-width:390px){
+  .page-title{ font-size:26px; }
+  .login-tagline{ font-size:34px; }
+}
+</style>
+</head>
+<body>
+<div id="app">
+
+  <!-- ══════════════════════ LOGIN ══════════════════════ -->
+  <div id="s-login" class="screen active" style="padding-bottom:0;">
+    <div class="login-hero">
+      <div class="login-hero-content">
+        <div class="login-logo-txt">OptiSpend AI</div>
+        <div class="login-tagline">Take the stress<br><em>out of</em> spending.</div>
+        <div class="login-stats">
+          <div class="l-stat">
+            <div class="l-stat-val" style="color:var(--mint)">₹12K+</div>
+            <div class="l-stat-lbl">Saved/year</div>
+          </div>
+          <div class="l-stat">
+            <div class="l-stat-val" style="color:var(--accent)">98%</div>
+            <div class="l-stat-lbl">Scam accuracy</div>
+          </div>
+          <div class="l-stat">
+            <div class="l-stat-val" style="color:var(--warn)">4.8★</div>
+            <div class="l-stat-lbl">App rating</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="login-form">
+      <div class="login-tabs" style="margin-top:24px;">
+        <button class="login-tab active" id="lt-in" onclick="loginTab('in')">Sign In</button>
+        <button class="login-tab" id="lt-up" onclick="loginTab('up')">Create Account</button>
+      </div>
+
+      <!-- Sign In -->
+      <div id="lf-in">
+        <div class="form-group">
+          <label class="inp-label">Email</label>
+          <input class="inp" id="li-email" type="email" placeholder="vansh@gmail.com">
+        </div>
+        <div class="form-group">
+          <label class="inp-label">Password</label>
+          <input class="inp" id="li-pass" type="password" placeholder="••••••••">
+        </div>
+        <div style="text-align:right;margin-bottom:18px;">
+          <span style="font-size:13px;color:var(--accent);cursor:pointer;">Forgot password?</span>
+        </div>
+        <button class="btn btn-primary" onclick="doLogin()">Sign In →</button>
+        <div style="text-align:center;margin-top:12px;">
+          <button class="btn btn-ghost" style="margin-top:0;" onclick="quickDemo()">⚡ Quick Demo Login</button>
+        </div>
+      </div>
+
+      <!-- Create Account -->
+      <div id="lf-up" style="display:none">
+        <div class="row">
+          <div class="col form-group">
+            <label class="inp-label">First Name</label>
+            <input class="inp" id="su-first" placeholder="Vansh">
+          </div>
+          <div class="col form-group">
+            <label class="inp-label">Last Name</label>
+            <input class="inp" id="su-last" placeholder="Sharma">
+          </div>
+        </div>
+        <div class="form-group">
+          <label class="inp-label">Email</label>
+          <input class="inp" id="su-email" type="email" placeholder="vansh@gmail.com">
+        </div>
+        <div class="form-group">
+          <label class="inp-label">Phone</label>
+          <input class="inp" id="su-phone" type="tel" placeholder="+91 98480 00000">
+        </div>
+        <div class="form-group">
+          <label class="inp-label">Password</label>
+          <input class="inp" id="su-pass" type="password" placeholder="Minimum 8 characters">
+        </div>
+        <button class="btn btn-primary" onclick="doSignup()" style="margin-top:4px;">Create Account →</button>
+      </div>
+
+      <!-- Feature strip -->
+      <div style="display:flex;gap:0;margin-top:28px;background:var(--s2);border-radius:18px;overflow:hidden;border:1px solid rgba(255,255,255,.06);">
+        <div style="flex:1;text-align:center;padding:16px 8px;border-right:1px solid rgba(255,255,255,.06);">
+          <div style="font-size:22px;margin-bottom:5px;">🛡️</div>
+          <div style="font-size:11px;font-weight:600;margin-bottom:3px;">Scam Shield</div>
+          <div style="font-size:10px;color:var(--t2);line-height:1.4;">Real-time protection</div>
+        </div>
+        <div style="flex:1;text-align:center;padding:16px 8px;border-right:1px solid rgba(255,255,255,.06);">
+          <div style="font-size:22px;margin-bottom:5px;">🧟</div>
+          <div style="font-size:11px;font-weight:600;margin-bottom:3px;">Zombie Killer</div>
+          <div style="font-size:10px;color:var(--t2);line-height:1.4;">Kill dead subs</div>
+        </div>
+        <div style="flex:1;text-align:center;padding:16px 8px;">
+          <div style="font-size:22px;margin-bottom:5px;">💸</div>
+          <div style="font-size:11px;font-weight:600;margin-bottom:3px;">Price Engine</div>
+          <div style="font-size:10px;color:var(--t2);line-height:1.4;">4 platforms live</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ══════════════════════ HOME ══════════════════════ -->
+  <div id="s-home" class="screen">
+    <div class="home-header">
+      <div class="home-top">
+        <div>
+          <div class="greeting-sub">✈️ Good morning</div>
+          <div class="greeting-name" id="home-name">Vansh 👋</div>
+          <div style="font-size:11px;color:var(--t3);margin-top:4px;">📍 West Delhi, India</div>
+        </div>
+        <div class="avatar" id="home-avatar" onclick="goTo('profile')">V</div>
+      </div>
+      <!-- KPI row -->
+      <div class="kpi-row">
+        <div class="kpi-card">
+          <div class="kpi-icon">💰</div>
+          <div class="kpi-val" id="kpi-saved" style="color:var(--mint)">₹12,400</div>
+          <div class="kpi-lbl">Saved / yr</div>
+        </div>
+        <div class="kpi-card">
+          <div class="kpi-icon">🧟</div>
+          <div class="kpi-val" id="kpi-zombie" style="color:var(--danger)">3</div>
+          <div class="kpi-lbl">Zombie Subs</div>
+        </div>
+        <div class="kpi-card">
+          <div class="kpi-icon">🛡️</div>
+          <div class="kpi-val" style="color:var(--warn)">8</div>
+          <div class="kpi-lbl">Scams Blocked</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Scam scanner -->
+    <div class="search-bar" id="home-search" onclick="this.querySelector('input').focus()">
+      <span style="font-size:18px;">🔍</span>
+      <input id="scam-search-inp" placeholder="Paste link or merchant to scan scams..." onkeydown="if(event.key==='Enter')runScamFromHome()">
+      <button onclick="runScamFromHome()" style="background:var(--accent);border:none;color:#061020;padding:7px 14px;border-radius:50px;font-weight:700;font-size:12px;cursor:pointer;font-family:'DM Sans',sans-serif;">Scan</button>
+    </div>
+    <div id="home-scam-result"></div>
+
+    <!-- Optimization Match -->
+    <div class="sec-hdr">
+      <h2>🎯 Optimization Match</h2>
+      <a onclick="goTo('subs')">View All →</a>
+    </div>
+    <div class="scroll-row" id="opt-cards-row">
+      <!-- populated by JS -->
+    </div>
+
+    <!-- Spend DNA -->
+    <div class="sec-hdr" style="margin-top:20px;">
+      <h2>🧬 Monthly Spend DNA</h2>
+      <a onclick="goTo('analytics')">Analytics →</a>
+    </div>
+    <div class="dna-grid" id="dna-grid">
+      <!-- populated by JS -->
+    </div>
+
+    <!-- Activity -->
+    <div class="sec-hdr" style="margin-top:20px;padding-bottom:0;">
+      <h2>⚡ Recent Activity</h2>
+    </div>
+    <div id="activity-list">
+      <!-- populated by JS -->
+    </div>
+
+    <div style="height:16px;"></div>
+  </div>
+
+  <!-- ══════════════════════ PRICE HUNTER ══════════════════════ -->
+  <div id="s-price" class="screen">
+    <div style="padding:52px 20px 16px;background:linear-gradient(160deg,rgba(138,180,248,.07) 0%,transparent 60%);">
+      <div class="page-eyebrow">OptiSpend AI</div>
+      <div class="page-title">🔍 Value Hunter</div>
+      <div class="page-sub">Compare prices across Amazon, Flipkart, Meesho & Myntra with scam detection.</div>
+    </div>
+
+    <!-- Search -->
+    <div style="padding:0 20px 12px;">
+      <div style="display:flex;gap:8px;">
+        <input class="inp" id="price-inp" placeholder="Search any product..." style="flex:1;" onkeydown="if(event.key==='Enter')runPriceSearch()">
+        <button onclick="runPriceSearch()" style="background:var(--accent);border:none;color:#061020;padding:0 20px;border-radius:14px;font-weight:700;font-size:14px;cursor:pointer;font-family:'DM Sans',sans-serif;border-radius:50px;">Search</button>
+      </div>
+    </div>
+
+    <!-- Quick search chips -->
+    <div style="padding:0 20px 6px;font-size:11px;color:var(--t2);font-weight:600;text-transform:uppercase;letter-spacing:.5px;">🔥 Try these</div>
+    <div class="scroll-row" style="padding-bottom:12px;">
+      <button class="pill" style="background:var(--s2);border:1px solid rgba(255,255,255,.08);color:var(--t2);" onclick="quickSearch('iphone 15')">📱 iPhone 15</button>
+      <button class="pill" style="background:var(--s2);border:1px solid rgba(255,255,255,.08);color:var(--t2);" onclick="quickSearch('sony wh1000xm5')">🎧 Sony XM5</button>
+      <button class="pill" style="background:var(--s2);border:1px solid rgba(255,255,255,.08);color:var(--t2);" onclick="quickSearch('oneplus 12')">📲 OnePlus 12</button>
+      <button class="pill" style="background:var(--s2);border:1px solid rgba(255,255,255,.08);color:var(--t2);" onclick="quickSearch('samsung tv')">📺 Samsung TV</button>
+      <button class="pill" style="background:var(--s2);border:1px solid rgba(255,255,255,.08);color:var(--t2);" onclick="quickSearch('macbook air')">💻 MacBook Air</button>
+    </div>
+
+    <!-- Platform filter -->
+    <div class="filter-row" id="platform-chips">
+      <button class="fchip active" data-plat="all" onclick="setPlatform(this)">All Platforms</button>
+      <button class="fchip" data-plat="amazon"   onclick="setPlatform(this)">🛒 Amazon</button>
+      <button class="fchip" data-plat="flipkart" onclick="setPlatform(this)">🏪 Flipkart</button>
+      <button class="fchip" data-plat="meesho"   onclick="setPlatform(this)">🛍️ Meesho</button>
+      <button class="fchip" data-plat="myntra"   onclick="setPlatform(this)">👗 Myntra</button>
+    </div>
+
+    <div id="price-results">
+      <!-- Empty state -->
+      <div id="price-empty" style="text-align:center;padding:40px 28px;">
+        <div style="font-size:52px;margin-bottom:14px;">🛒</div>
+        <div class="serif" style="font-size:22px;margin-bottom:8px;">Find any product's best price</div>
+        <div style="font-size:13px;color:var(--t2);line-height:1.7;">We query 4 platforms simultaneously and run a scam check on every result.</div>
+        <div style="display:flex;justify-content:center;gap:28px;margin-top:22px;">
+          <div style="text-align:center;"><div style="font-size:22px;font-weight:700;color:var(--mint);">4</div><div style="font-size:10px;color:var(--t2);">Platforms</div></div>
+          <div style="text-align:center;"><div style="font-size:22px;font-weight:700;color:var(--accent);">Live</div><div style="font-size:10px;color:var(--t2);">Prices</div></div>
+          <div style="text-align:center;"><div style="font-size:22px;font-weight:700;color:var(--danger);">98%</div><div style="font-size:10px;color:var(--t2);">Scam catch</div></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ══════════════════════ SUBSCRIPTIONS ══════════════════════ -->
+  <div id="s-subs" class="screen">
+    <div style="padding:52px 20px 16px;background:linear-gradient(160deg,rgba(199,125,255,.07) 0%,transparent 60%);">
+      <div class="page-eyebrow">OptiSpend AI</div>
+      <div class="page-title">📅 Subscription Map</div>
+      <div class="page-sub">Every recurring payment tracked and optimised automatically.</div>
+    </div>
+
+    <!-- Summary card -->
+    <div class="sub-summary" id="sub-summary-card"><!-- JS --></div>
+
+    <!-- Filter chips -->
+    <div class="filter-row">
+      <button class="fchip active" data-sf="all"    onclick="filterSubs(this)">🗂️ All</button>
+      <button class="fchip" data-sf="zombie" onclick="filterSubs(this)">🧟 Zombie</button>
+      <button class="fchip" data-sf="trial"  onclick="filterSubs(this)">⏰ Trials</button>
+      <button class="fchip" data-sf="group"  onclick="filterSubs(this)">👥 Group</button>
+      <button class="fchip" data-sf="active" onclick="filterSubs(this)">✅ Active</button>
+    </div>
+
+    <div id="sub-list"><!-- JS --></div>
+
+    <!-- Add sub -->
+    <div class="sec-hdr" style="margin-top:8px;">
+      <h2>➕ Add Subscription</h2>
+    </div>
+    <div style="padding:0 20px;margin-bottom:12px;">
+      <div class="row" style="margin-bottom:10px;">
+        <div class="col"><input class="inp" id="new-sub-name" placeholder="Service name"></div>
+        <div class="col"><input class="inp" id="new-sub-price" type="number" placeholder="₹/month"></div>
+      </div>
+      <button class="btn btn-ghost" onclick="addNewSub()">Add to Tracker</button>
+    </div>
+
+    <!-- Negotiation scripts -->
+    <div class="sec-hdr" style="margin-top:4px;">
+      <h2>🎤 AI Negotiation Scripts</h2>
+    </div>
+    <div id="neg-scripts"><!-- JS --></div>
+    <div style="height:8px;"></div>
+  </div>
+
+  <!-- ══════════════════════ ANALYTICS ══════════════════════ -->
+  <div id="s-analytics" class="screen">
+    <div style="padding:52px 20px 16px;background:linear-gradient(160deg,rgba(196,238,208,.07) 0%,transparent 60%);">
+      <div class="page-eyebrow">OptiSpend AI</div>
+      <div class="page-title">📊 Spend Analytics</div>
+      <div class="page-sub">Your complete financial health, visualised.</div>
+    </div>
+
+    <!-- Mood score -->
+    <div class="mood-card">
+      <div style="font-size:11px;color:var(--t2);text-transform:uppercase;letter-spacing:1px;margin-bottom:8px;font-weight:600;">Weekly Spend Mood</div>
+      <div style="display:flex;align-items:flex-end;gap:14px;">
+        <div class="mood-score" id="mood-number" style="color:var(--mint);">74</div>
+        <div style="margin-bottom:10px;">
+          <div style="font-size:16px;font-weight:700;" id="mood-label">Good 👍</div>
+          <div style="font-size:11px;color:var(--t2);margin-top:2px;" id="mood-tip">Cancel 3 zombie subs to reach 90+</div>
+        </div>
+      </div>
+      <div class="mood-bar-track">
+        <div class="mood-bar-fill" id="mood-bar" style="width:74%;"></div>
+      </div>
+      <div class="mood-labels">
+        <span>At Risk</span><span>Moderate</span><span>Excellent</span>
+      </div>
+    </div>
+
+    <!-- Bar chart -->
+    <div class="chart-card">
+      <div class="chart-title">Monthly Spend Trend</div>
+      <canvas id="barChart" height="160"></canvas>
+    </div>
+
+    <!-- Category breakdown -->
+    <div class="chart-card">
+      <div class="chart-title">Category Breakdown</div>
+      <div style="display:flex;gap:16px;align-items:center;margin-bottom:16px;">
+        <canvas id="donutChart" width="120" height="120" style="flex-shrink:0;"></canvas>
+        <div id="donut-legend" style="flex:1;"></div>
+      </div>
+      <div id="cat-bars"><!-- JS --></div>
+    </div>
+
+    <!-- AI Insights -->
+    <div class="sec-hdr">
+      <h2>💡 AI Insights</h2>
+    </div>
+    <div id="insights-list"><!-- JS --></div>
+    <div style="height:8px;"></div>
+  </div>
+
+  <!-- ══════════════════════ PROFILE ══════════════════════ -->
+  <div id="s-profile" class="screen">
+    <div style="padding:52px 20px 16px;display:flex;justify-content:space-between;align-items:flex-end;">
+      <div>
+        <div class="page-eyebrow">OptiSpend AI</div>
+        <div class="page-title">👤 Profile</div>
+      </div>
+      <button onclick="doLogout()" style="background:rgba(255,107,107,.12);border:1px solid rgba(255,107,107,.25);color:var(--danger);padding:8px 16px;border-radius:50px;font-size:13px;font-weight:600;cursor:pointer;font-family:'DM Sans',sans-serif;">Log out</button>
+    </div>
+
+    <!-- Hero -->
+    <div class="profile-hero">
+      <div class="profile-av" id="prof-av">V</div>
+      <div style="flex:1;">
+        <div class="profile-name" id="prof-name">Vansh Sharma</div>
+        <div class="profile-detail" id="prof-email">📧 vansh@gmail.com</div>
+        <div class="profile-detail" id="prof-phone">📱 +91 98480 00000</div>
+        <div class="profile-detail">📍 West Delhi, India</div>
+      </div>
+      <button onclick="openSheet('edit-profile')" style="background:rgba(138,180,248,.12);border:1px solid rgba(138,180,248,.22);color:var(--accent);padding:8px 14px;border-radius:50px;font-size:12px;font-weight:600;cursor:pointer;font-family:'DM Sans',sans-serif;align-self:flex-start;">✏️ Edit</button>
+    </div>
+
+    <!-- Savings hero -->
+    <div class="savings-hero">
+      <div>
+        <div style="font-size:11px;color:var(--t2);margin-bottom:4px;">🏆 Total Savings This Year</div>
+        <div class="savings-num" id="prof-saved">₹12,400</div>
+        <div style="font-size:11px;color:var(--t2);margin-top:5px;" id="prof-saved-sub">5 subs cancelled · 12 price deals · 8 scams</div>
+      </div>
+      <div style="font-size:52px;">🏅</div>
+    </div>
+
+    <!-- Savings breakdown -->
+    <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;padding:0 20px;margin-bottom:16px;">
+      <div class="kpi-card"><div class="kpi-icon">🧟</div><div class="kpi-val" id="prof-zombie-val" style="color:var(--danger);">₹4,200</div><div class="kpi-lbl">Zombie subs</div></div>
+      <div class="kpi-card"><div class="kpi-icon">💸</div><div class="kpi-val" style="color:var(--accent);">₹5,800</div><div class="kpi-lbl">Price deals</div></div>
+      <div class="kpi-card"><div class="kpi-icon">🛡️</div><div class="kpi-val" style="color:var(--mint);">₹2,400</div><div class="kpi-lbl">Scams stopped</div></div>
+    </div>
+
+    <!-- Quick nav -->
+    <div style="padding:0 20px;margin-bottom:6px;font-size:10px;color:var(--t3);text-transform:uppercase;letter-spacing:1px;font-weight:600;">Financial Tools</div>
+    <div class="prof-btn" onclick="goTo('subs')">
+      <div class="prof-btn-icon">📅</div>
+      <div class="prof-btn-text"><div class="prof-btn-title">Subscription Map</div><div class="prof-btn-sub" id="prof-sub-meta">11 active · 3 zombies</div></div>
+      <div class="prof-chevron">›</div>
+    </div>
+    <div class="prof-btn" onclick="goTo('analytics')">
+      <div class="prof-btn-icon">📊</div>
+      <div class="prof-btn-text"><div class="prof-btn-title">Analytics Dashboard</div><div class="prof-btn-sub">Spend DNA, mood score, insights</div></div>
+      <div class="prof-chevron">›</div>
+    </div>
+    <div class="prof-btn" onclick="goTo('price')">
+      <div class="prof-btn-icon">🔍</div>
+      <div class="prof-btn-text"><div class="prof-btn-title">Value Hunter</div><div class="prof-btn-sub">Compare prices across 4 platforms</div></div>
+      <div class="prof-chevron">›</div>
+    </div>
+
+    <div style="padding:16px 20px 6px;font-size:10px;color:var(--t3);text-transform:uppercase;letter-spacing:1px;font-weight:600;">Security</div>
+
+    <div class="toggle-row">
+      <span style="font-size:20px;">🛡️</span>
+      <div style="flex:1;"><div style="font-size:14px;font-weight:500;">Real-time Browser Shield</div><div style="font-size:11px;color:var(--t2);margin-top:2px;">Blocks scam sites automatically</div></div>
+      <button class="toggle on" id="tog-shield" onclick="toggleSwitch(this)"><div class="toggle-thumb"></div></button>
+    </div>
+    <div class="toggle-row">
+      <span style="font-size:20px;">🔐</span>
+      <div style="flex:1;"><div style="font-size:14px;font-weight:500;">OTP Verification Guard</div><div style="font-size:11px;color:var(--t2);margin-top:2px;">Warns before sharing OTPs</div></div>
+      <button class="toggle on" id="tog-otp" onclick="toggleSwitch(this)"><div class="toggle-thumb"></div></button>
+    </div>
+    <div class="toggle-row">
+      <span style="font-size:20px;">🔔</span>
+      <div style="flex:1;"><div style="font-size:14px;font-weight:500;">Push Notifications</div><div style="font-size:11px;color:var(--t2);margin-top:2px;">Alerts for price drops and zombies</div></div>
+      <button class="toggle on" id="tog-notif" onclick="toggleSwitch(this)"><div class="toggle-thumb"></div></button>
+    </div>
+
+    <div style="padding:16px 20px 6px;font-size:10px;color:var(--t3);text-transform:uppercase;letter-spacing:1px;font-weight:600;">Group Splits</div>
+    <div class="prof-btn" onclick="showToast('📲 WhatsApp invite sent to Spotify group!','info')">
+      <div class="prof-btn-icon">🎵</div>
+      <div class="prof-btn-text"><div class="prof-btn-title">Spotify Family Plan</div><div class="prof-btn-sub">4 members · ₹47/mo each · Rahul, Priya, Arjun</div></div>
+      <div style="background:rgba(196,238,208,.15);color:var(--mint);font-size:10px;font-weight:700;padding:4px 10px;border-radius:8px;">Active ✓</div>
+    </div>
+    <div class="prof-btn" onclick="showToast('📲 YouTube family plan active','info')">
+      <div class="prof-btn-icon">▶️</div>
+      <div class="prof-btn-text"><div class="prof-btn-title">YouTube Premium</div><div class="prof-btn-sub">3 members · ₹63/mo each · Rahul, Priya</div></div>
+      <div style="background:rgba(138,180,248,.15);color:var(--accent);font-size:10px;font-weight:700;padding:4px 10px;border-radius:8px;">Active ✓</div>
+    </div>
+    <div class="prof-btn" onclick="openSheet('add-split')">
+      <div class="prof-btn-icon">➕</div>
+      <div class="prof-btn-text"><div class="prof-btn-title">Add New Split Group</div><div class="prof-btn-sub">Split any subscription with friends</div></div>
+      <div class="prof-chevron">›</div>
+    </div>
+
+    <div style="padding:16px 20px 6px;font-size:10px;color:var(--t3);text-transform:uppercase;letter-spacing:1px;font-weight:600;">Export & Support</div>
+    <div class="prof-btn" onclick="showToast('📄 PDF report generated!','success')">
+      <div class="prof-btn-icon">📄</div>
+      <div class="prof-btn-text"><div class="prof-btn-title">Export PDF Report</div><div class="prof-btn-sub">Full spending analysis</div></div>
+      <div class="prof-chevron">›</div>
+    </div>
+    <div class="prof-btn" onclick="showToast('📊 CSV exported!','success')">
+      <div class="prof-btn-icon">📊</div>
+      <div class="prof-btn-text"><div class="prof-btn-title">Export CSV Data</div><div class="prof-btn-sub">Raw transaction data</div></div>
+      <div class="prof-chevron">›</div>
+    </div>
+    <div class="prof-btn" onclick="openSheet('report-issue')">
+      <div class="prof-btn-icon">☕</div>
+      <div class="prof-btn-text"><div class="prof-btn-title">Report an Issue</div><div class="prof-btn-sub">Quick support contact</div></div>
+      <div class="prof-chevron">›</div>
+    </div>
+
+    <div style="text-align:center;padding:24px 20px;color:var(--t3);font-size:11px;line-height:1.8;">
+      OptiSpend AI · v2.1.0 · Made with ❤️
+    </div>
+
+    <button class="btn btn-danger" style="margin:0 20px 20px;width:calc(100% - 40px);" onclick="doLogout()">🚪 Log Out</button>
+  </div>
+
+  <!-- ══════════════════════ BOTTOM NAV ══════════════════════ -->
+  <nav id="bottom-nav">
+    <button class="nav-btn active" id="nav-home"      onclick="goTo('home')">      <span class="n-icon">🏠</span><span class="n-lbl">Home</span>     </button>
+    <button class="nav-btn"        id="nav-price"     onclick="goTo('price')">     <span class="n-icon">🔍</span><span class="n-lbl">Prices</span>   </button>
+    <button class="nav-btn"        id="nav-subs"      onclick="goTo('subs')">      <span class="n-icon">📅</span><span class="n-lbl">Subs</span>      </button>
+    <button class="nav-btn"        id="nav-analytics" onclick="goTo('analytics')"> <span class="n-icon">📊</span><span class="n-lbl">Analytics</span></button>
+    <button class="nav-btn"        id="nav-profile"   onclick="goTo('profile')">   <span class="n-icon">👤</span><span class="n-lbl">Profile</span>  </button>
+  </nav>
+
+  <!-- ══════════════════════ MODALS ══════════════════════ -->
+  <div class="modal-bg" id="modal-bg" onclick="closeSheet(event)">
+    <div class="modal-sheet" id="modal-sheet"></div>
+  </div>
+
+  <!-- Toast -->
+  <div id="toast"></div>
+</div>
+
+<script>
+// ═══════════════════════════════════════════════════════
+//  DATA
+// ═══════════════════════════════════════════════════════
+const SUBS = [
+  {id:"netflix",  name:"Netflix",           icon:"🎬", price:499,  billing:"15th",          unused:5,  kind:"active", group:false, color:"#E5091422"},
+  {id:"spotify",  name:"Spotify",           icon:"🎵", price:119,  billing:"1st",           unused:2,  kind:"active", group:true,  color:"#1DB95422"},
+  {id:"hotstar",  name:"Disney+ Hotstar",   icon:"⭐", price:899,  billing:"20th",          unused:62, kind:"zombie", group:false, color:"#0E4DA422"},
+  {id:"amazon",   name:"Amazon Prime",      icon:"📦", price:299,  billing:"5th",           unused:3,  kind:"active", group:false, color:"#FF990022"},
+  {id:"youtube",  name:"YouTube Premium",   icon:"▶️", price:189,  billing:"10th",          unused:1,  kind:"active", group:true,  color:"#FF000022"},
+  {id:"icloud",   name:"iCloud+ 50GB",      icon:"☁️", price:75,   billing:"22nd",          unused:0,  kind:"active", group:false, color:"#0071E322"},
+  {id:"gym",      name:"Cult.fit Gym",      icon:"💪", price:1499, billing:"1st",           unused:45, kind:"zombie", group:false, color:"#FF3B3022"},
+  {id:"notion",   name:"Notion Pro",        icon:"📝", price:320,  billing:"12th",          unused:28, kind:"zombie", group:false, color:"#FFFFFF18"},
+  {id:"adobe",    name:"Adobe Creative CC", icon:"🎨", price:1675, billing:"25th",          unused:3,  kind:"active", group:false, color:"#FF000022"},
+  {id:"gone",     name:"Google One 200GB",  icon:"💾", price:130,  billing:"8th",           unused:0,  kind:"active", group:false, color:"#4285F422"},
+  {id:"param",    name:"Paramount+",        icon:"🌟", price:299,  billing:"Ends in 3 days",unused:2,  kind:"trial",  group:false, color:"#0064FF22"},
+  {id:"appletv",  name:"Apple TV+",         icon:"🍎", price:99,   billing:"Ends in 1 day", unused:0,  kind:"trial",  group:false, color:"#55555522"},
+];
+const ALTS = {
+  notion: ["Obsidian","Free","obsidian.md"],
+  adobe:  ["ILovePDF","Free","ilovepdf.com"],
+  gym:    ["Nike Training","Free","nike.com/ntc-app"],
+  hotstar:["JioCinema","Free (80% content)","jiocinema.com"],
+};
+const PRICES = {
+  "iphone 15":[
+    {p:"Amazon",   i:"🛒",price:79900,orig:84900,trust:9.3,safety:"safe"},
+    {p:"Flipkart", i:"🏪",price:76999,orig:84900,trust:9.5,safety:"safe"},
+    {p:"Meesho",   i:"🛍️",price:65000,orig:84900,trust:3.2,safety:"danger"},
+    {p:"Croma",    i:"🏬",price:79990,orig:84900,trust:9.8,safety:"safe"},
+  ],
+  "sony wh1000xm5":[
+    {p:"Amazon",   i:"🛒",price:29990,orig:34990,trust:9.5,safety:"safe"},
+    {p:"Flipkart", i:"🏪",price:27990,orig:34990,trust:9.2,safety:"safe"},
+    {p:"Meesho",   i:"🛍️",price:24990,orig:34990,trust:7.1,safety:"warn"},
+    {p:"Myntra",   i:"👗",price:28490,orig:34990,trust:8.8,safety:"safe"},
+  ],
+  "oneplus 12":[
+    {p:"Amazon",   i:"🛒",price:64999,orig:69999,trust:9.5,safety:"safe"},
+    {p:"Flipkart", i:"🏪",price:65499,orig:69999,trust:9.2,safety:"safe"},
+    {p:"Meesho",   i:"🛍️",price:55000,orig:69999,trust:2.8,safety:"danger"},
+  ],
+  "samsung tv":[
+    {p:"Amazon",          i:"🛒",price:54990,orig:69990,trust:9.3,safety:"safe"},
+    {p:"Flipkart",        i:"🏪",price:56990,orig:69990,trust:9.1,safety:"safe"},
+    {p:"Reliance Digital",i:"🏬",price:59990,orig:69990,trust:9.9,safety:"safe"},
+  ],
+  "macbook air":[
+    {p:"Amazon",   i:"🛒",price:114900,orig:124900,trust:9.4,safety:"safe"},
+    {p:"Flipkart", i:"🏪",price:112999,orig:124900,trust:9.3,safety:"safe"},
+    {p:"Apple.com",i:"🍎",price:119900,orig:124900,trust:10.0,safety:"safe"},
+    {p:"Meesho",   i:"🛍️",price:89000, orig:124900,trust:2.1,safety:"danger"},
+  ],
+};
+const CATS = [
+  {name:"Shopping",      amt:8500,  color:"#ff6b6b", icon:"🛍️", img:"https://images.unsplash.com/photo-1483985988355-763728e1935b?w=400&q=75", score:"⚠️ Risk",  sc:"#ffd166"},
+  {name:"Food & Dining", amt:6840,  color:"#c4eed0", icon:"🍽️", img:"https://images.unsplash.com/photo-1555396273-367ea4eb4db5?w=400&q=75",   score:"⭐ 8.5",  sc:"#c4eed0"},
+  {name:"Entertainment", amt:4230,  color:"#8ab4f8", icon:"🎬", img:"https://images.unsplash.com/photo-1489599849927-2ee91cede3ba?w=400&q=75", score:"⭐ 9.8",  sc:"#c4eed0"},
+  {name:"Subscriptions", amt:2847,  color:"#c77dff", icon:"📅", img:"https://images.unsplash.com/photo-1611532736597-de2d4265fba3?w=400&q=75", score:"⚠️ High", sc:"#ff6b6b"},
+  {name:"Transport",     amt:2150,  color:"#ffd166", icon:"🚗", img:"https://images.unsplash.com/photo-1449824913935-59a10b8d2000?w=400&q=75", score:"⭐ 8.1",  sc:"#c4eed0"},
+  {name:"Health",        amt:1890,  color:"#06d6a0", icon:"💊", img:"https://images.unsplash.com/photo-1571019613454-1cb2f99b2d8b?w=400&q=75",  score:"⭐ 9.2",  sc:"#c4eed0"},
+];
+const MONTHLY = [
+  {m:"Sep",v:16800},{m:"Oct",v:18200},{m:"Nov",v:21500},
+  {m:"Dec",v:28900},{m:"Jan",v:19800},{m:"Feb",v:22400},{m:"Mar",v:26457,cur:true},
+];
+const INSIGHTS = [
+  {icon:"📈",color:"#ffd166",title:"Food spend up 24% vs last month",    body:"Swiggy/Zomato orders spiked. Meal prepping 3x/week saves ₹1,800/mo.",       dest:"subs"},
+  {icon:"🧟",color:"#ff6b6b",title:"3 zombie subs draining ₹2,618/mo",   body:"Hotstar (62d), Cult.fit (45d), Notion (28d) — all unused. Cancel to save ₹31,416/year.", dest:"subs"},
+  {icon:"🛡️",color:"#c4eed0",title:"2 scam sites blocked this week",     body:"Shield stopped cheapiphonedeal.xyz before you entered card details.",        dest:"home"},
+  {icon:"💡",color:"#8ab4f8",title:"Swap Adobe CC → ILovePDF for free",  body:"Same 90% of features, zero cost. Saves ₹1,675/month — ₹20,100/year.",       dest:"subs"},
+  {icon:"👥",color:"#c77dff",title:"Spotify Family Plan saves ₹72/mo",   body:"3 friends paying ₹119 each. Merge to Family Plan — ₹47/mo per person.",     dest:"subs"},
+];
+const NEG_SCRIPTS = [
+  {title:"📱 Airtel / Jio", sub:"Cut your telecom bill",
+   script:'"I have been a customer for 2+ years. Jio offers the same 5G speed for ₹200 less. Can you match it or offer a loyalty discount?"'},
+  {title:"🎨 Adobe CC", sub:"Threaten to cancel for a retention offer",
+   script:'"I am considering cancelling Creative Cloud. ILovePDF offers 90% of the features for free. Is there a student or loyalty plan available?"'},
+  {title:"💪 Gym Membership", sub:"Pause or reduce for travel",
+   script:'"I have been a member for 14 months and am travelling for 3 months. Can I freeze my membership or get a 3-month discount instead of cancelling?"'},
+];
+
+// ═══════════════════════════════════════════════════════
+//  STATE
+// ═══════════════════════════════════════════════════════
+let state = {
+  loggedIn: false,
+  userName: "Vansh",
+  userEmail: "vansh@gmail.com",
+  userPhone: "+91 98480 00000",
+  cancelled: [],
+  currentPlatform: "all",
+  currentSubFilter: "all",
+  openSubId: null,
+  chartsInit: false,
+  barChart: null,
+  donutChart: null,
+};
+
+// ═══════════════════════════════════════════════════════
+//  NAVIGATION
+// ═══════════════════════════════════════════════════════
+function goTo(page) {
+  document.querySelectorAll(".screen").forEach(s => s.classList.remove("active"));
+  document.getElementById("s-" + page).classList.add("active");
+  document.querySelectorAll(".nav-btn").forEach(b => b.classList.remove("active"));
+  const nb = document.getElementById("nav-" + page);
+  if (nb) nb.classList.add("active");
+  document.getElementById("bottom-nav").style.display = "flex";
+  // Page-specific init
+  if (page === "subs")      initSubs();
+  if (page === "analytics") initAnalytics();
+  if (page === "home")      refreshHome();
+  if (page === "profile")   refreshProfile();
+  // Scroll top
+  document.getElementById("s-" + page).scrollTop = 0;
+}
+
+// ═══════════════════════════════════════════════════════
+//  AUTH
+// ═══════════════════════════════════════════════════════
+function loginTab(t) {
+  document.getElementById("lt-in").classList.toggle("active", t==="in");
+  document.getElementById("lt-up").classList.toggle("active", t==="up");
+  document.getElementById("lf-in").style.display = t==="in" ? "block" : "none";
+  document.getElementById("lf-up").style.display = t==="up" ? "block" : "none";
+}
+function doLogin() {
+  const e = document.getElementById("li-email").value.trim();
+  const p = document.getElementById("li-pass").value;
+  if (!e || !p) { showToast("Please enter email and password","error"); return; }
+  state.userName  = e.split("@")[0].charAt(0).toUpperCase() + e.split("@")[0].slice(1);
+  state.userEmail = e;
+  launchApp();
+}
+function doSignup() {
+  const f = document.getElementById("su-first").value.trim();
+  const e = document.getElementById("su-email").value.trim();
+  const p = document.getElementById("su-pass").value;
+  const ph= document.getElementById("su-phone").value.trim();
+  if (!f||!e||!p) { showToast("Fill in First name, Email and Password","error"); return; }
+  if (p.length < 8) { showToast("Password must be 8+ characters","error"); return; }
+  state.userName  = f.charAt(0).toUpperCase() + f.slice(1);
+  state.userEmail = e;
+  if (ph) state.userPhone = ph;
+  showToast("Account created! Welcome " + state.userName + " 🎉", "success");
+  setTimeout(launchApp, 600);
+}
+function quickDemo() {
+  state.userName = "Vansh";
+  launchApp();
+}
+function launchApp() {
+  state.loggedIn = true;
+  document.getElementById("s-login").classList.remove("active");
+  buildOptCards();
+  buildDNAGrid();
+  buildActivityList();
+  refreshHome();
+  goTo("home");
+}
+function doLogout() {
+  state.loggedIn  = false;
+  state.cancelled = [];
+  state.chartsInit= false;
+  document.getElementById("bottom-nav").style.display = "none";
+  document.querySelectorAll(".screen").forEach(s=>s.classList.remove("active"));
+  document.getElementById("s-login").classList.add("active");
+  showToast("Logged out successfully","");
+}
+
+// ═══════════════════════════════════════════════════════
+//  HOME
+// ═══════════════════════════════════════════════════════
+function refreshHome() {
+  const n = state.userName;
+  document.getElementById("home-name").textContent   = n + " 👋";
+  document.getElementById("home-avatar").textContent = n[0].toUpperCase();
+  const saved  = 12400 + state.cancelled.length * 650;
+  const zombies= SUBS.filter(s=>s.kind==="zombie"&&!state.cancelled.includes(s.id)).length;
+  document.getElementById("kpi-saved").textContent  = "₹" + saved.toLocaleString("en-IN");
+  document.getElementById("kpi-zombie").textContent = zombies;
+}
+
+function buildOptCards() {
+  const cards = [
+    {bg:"linear-gradient(135deg,#2a0c0c,#161618)",border:"rgba(255,107,107,.3)",
+     tag:"⚠️ DUPLICATE",tc:"#ff6b6b",title:"Netflix Charged Twice",
+     body:"Paying ₹499 via Paytm AND direct. Cancel one — saves ₹499/mo.",
+     saving:"Save ₹499/mo",btnBg:"#ff6b6b",btnColor:"#fff",action:"dup_netflix",btnTxt:"Cancel Duplicate"},
+    {bg:"linear-gradient(135deg,#0a1a0e,#161618)",border:"rgba(196,238,208,.3)",
+     tag:"💸 PRICE DROP",tc:"#c4eed0",title:"Sony WH-1000XM5",
+     body:"₹2,000 cheaper on Flipkart vs Amazon. 6-month low — best time to buy.",
+     saving:"Save ₹2,000",btnBg:"#c4eed0",btnColor:"#0a2010",action:"price_drop",btnTxt:"Compare Prices"},
+    {bg:"linear-gradient(135deg,#0a1428,#161618)",border:"rgba(138,180,248,.3)",
+     tag:"👥 GROUP DEAL",tc:"#8ab4f8",title:"Spotify Family Plan",
+     body:"3 friends at ₹119/mo each. Merge → just ₹47/mo each.",
+     saving:"Save ₹72/mo each",btnBg:"#8ab4f8",btnColor:"#061020",action:"group_spotify",btnTxt:"Merge Plans"},
+    {bg:"linear-gradient(135deg,#2a0c0c,#161618)",border:"rgba(255,107,107,.25)",
+     tag:"🧟 ZOMBIE",tc:"#ff6b6b",title:"Disney+ Hotstar Unused",
+     body:"Not opened in 62 days. Cancel now — saves ₹10,788/year.",
+     saving:"Save ₹899/mo",btnBg:"#ff6b6b",btnColor:"#fff",action:"zombie_hotstar",btnTxt:"Cancel Now"},
+  ];
+  const row = document.getElementById("opt-cards-row");
+  row.innerHTML = cards.map(c =>
+    '<div class="opt-card" style="background:'+c.bg+';border-color:'+c.border+';">'
+    +'<div class="tag" style="background:'+c.tc+'18;color:'+c.tc+';">'+c.tag+'</div>'
+    +'<div style="font-size:15px;font-weight:700;line-height:1.3;">'+c.title+'</div>'
+    +'<div class="opt-card-body">'+c.body+'</div>'
+    +'<div class="opt-card-saving" style="color:'+c.tc+';">'+c.saving+'</div>'
+    +'<button class="opt-action-btn" style="background:'+c.btnBg+';color:'+c.btnColor+';" onclick="handleOpt(\''+c.action+'\')">'+c.btnTxt+' →</button>'
+    +'</div>'
+  ).join("");
+}
+
+function buildDNAGrid() {
+  document.getElementById("dna-grid").innerHTML = CATS.map(c=>
+    '<div class="dna-card" onclick="goTo(\'analytics\')">'
+    +'<div class="dna-img" style="background-image:url('+c.img+');"></div>'
+    +'<div class="dna-overlay"></div>'
+    +'<div class="dna-score" style="color:'+c.sc+';">'+c.score+'</div>'
+    +'<div class="dna-bottom"><div class="dna-cat">'+c.name+'</div><div class="dna-amt">₹'+c.amt.toLocaleString("en-IN")+'</div></div>'
+    +'</div>'
+  ).join("");
+}
+
+function buildActivityList() {
+  const acts = [
+    {icon:"✅",bg:"#c4eed015",title:"Best price on Flipkart",sub:"MacBook Air M3 · Saved ₹1,901",time:"2 min ago"},
+    {icon:"🚨",bg:"#ff6b6b15",title:"Scam site blocked",   sub:"cheapiphonedeal.xyz · DANGER",  time:"1 hr ago"},
+    {icon:"🧟",bg:"#ffd16615",title:"Zombie sub alert",     sub:"Cult.fit · 45 days unused",     time:"3 hrs ago"},
+    {icon:"💸",bg:"#8ab4f815",title:"Price drop detected",  sub:"Sony WH-1000XM5 · –₹2,000",    time:"Yesterday"},
+    {icon:"👥",bg:"#c77dff15",title:"Group plan suggested", sub:"Spotify Family · 3 friends",    time:"Yesterday"},
+  ];
+  document.getElementById("activity-list").innerHTML = acts.map(a=>
+    '<div class="act-item">'
+    +'<div class="act-icon" style="background:'+a.bg+';">'+a.icon+'</div>'
+    +'<div class="act-body"><div class="act-title">'+a.title+'</div><div class="act-sub">'+a.sub+'</div></div>'
+    +'<div class="act-time">'+a.time+'</div>'
+    +'</div>'
+  ).join("");
+}
+
+function handleOpt(action) {
+  if (action==="dup_netflix") {
+    if (!state.cancelled.includes("netflix_dup")) state.cancelled.push("netflix_dup");
+    showToast("✅ Paytm Netflix cancelled! Saving ₹499/mo", "success");
+    refreshHome();
+  } else if (action==="price_drop") {
+    goTo("price"); setTimeout(()=>quickSearch("sony wh1000xm5"),200);
+  } else if (action==="group_spotify") {
+    showToast("📲 WhatsApp invite sent! Spotify Family Plan → ₹47/mo each","info");
+  } else if (action==="zombie_hotstar") {
+    if (!state.cancelled.includes("hotstar")) state.cancelled.push("hotstar");
+    showToast("✅ Hotstar cancelled! Saving ₹10,788/year","success");
+    refreshHome(); refreshProfile();
+  }
+}
+
+// ═══════════════════════════════════════════════════════
+//  SCAM CHECK
+// ═══════════════════════════════════════════════════════
+function runScamFromHome() {
+  const q = document.getElementById("scam-search-inp").value.trim();
+  if (!q) { showToast("Enter a URL or merchant name","error"); return; }
+  document.getElementById("home-scam-result").innerHTML = buildScamHTML(q);
+}
+function buildScamHTML(query) {
+  const q = query.toLowerCase();
+  const isDanger = /xyz|\.tk|\.ml|deal|cheap|free|win|offer|lucky|click|hack|flash/.test(q);
+  const isWarn   = /unknown|new|promo|sale99|shopz/.test(q);
+  let score, status, icon, color, rows;
+  if (isDanger) {
+    score=18; status="DANGER — DO NOT PROCEED"; icon="🚨"; color="#ff6b6b";
+    rows=[["Domain Age","< 2 months","#ff6b6b"],["Price Deviation","–68% vs avg","#ff6b6b"],["SSL Certificate","Invalid ✗","#ff6b6b"],["Community Reviews","None found","#ff6b6b"],["Scam Reports","3 this week","#ff6b6b"]];
+  } else if (isWarn) {
+    score=51; status="VERIFY — Proceed with caution"; icon="⚠️"; color="#ffd166";
+    rows=[["Domain Age","6 months","#ffd166"],["Price Deviation","–12% vs avg","#c4eed0"],["SSL Certificate","Valid ✓","#c4eed0"],["Community Reviews","Limited","#ffd166"],["Scam Reports","None yet","#c4eed0"]];
+  } else {
+    score=91; status="SAFE — Verified merchant"; icon="✅"; color="#c4eed0";
+    rows=[["Domain Age","5+ years","#c4eed0"],["Price Deviation","±8% of market","#c4eed0"],["SSL Certificate","Valid EV ✓","#c4eed0"],["Community Reviews","4.6★ · 12K+","#c4eed0"],["Scam Reports","None","#c4eed0"]];
+  }
+  return '<div class="scam-box" style="background:'+color+'0D;border:1px solid '+color+'35;margin:0 20px 12px;">'
+    +'<div class="scam-header"><span class="scam-big-icon">'+icon+'</span><div><div class="scam-status" style="color:'+color+';">'+status+'</div><div class="scam-score">Trust Score: <strong>'+score+'/100</strong> · "'+query.slice(0,40)+'"</div></div></div>'
+    +rows.map(r=>'<div class="scam-row"><span class="scam-row-l">'+r[0]+'</span><span class="scam-row-r" style="color:'+r[2]+';">'+r[1]+'</span></div>').join("")
+    +'</div>';
+}
+
+// ═══════════════════════════════════════════════════════
+//  PRICE ENGINE
+// ═══════════════════════════════════════════════════════
+function quickSearch(q) {
+  document.getElementById("price-inp").value = q;
+  runPriceSearch();
+}
+function setPlatform(el) {
+  document.querySelectorAll("#platform-chips .fchip").forEach(c=>c.classList.remove("active"));
+  el.classList.add("active");
+  state.currentPlatform = el.dataset.plat;
+  const q = document.getElementById("price-inp").value.trim();
+  if (q) runPriceSearch();
+}
+function runPriceSearch() {
+  const q = document.getElementById("price-inp").value.trim().toLowerCase();
+  if (!q) return;
+
+  let results = null;
+  for (const [key, vals] of Object.entries(PRICES)) {
+    if (key.split(" ").some(w=>q.includes(w)) || q.split(" ").some(w=>key.includes(w))) {
+      results = vals.map(r=>({...r}));
+      break;
+    }
+  }
+  if (!results) {
+    const base = 10000 + Math.floor(Math.random()*60000);
+    results = [
+      {p:"Amazon",   i:"🛒",price:base,      orig:base+5000,trust:9.3,safety:"safe"},
+      {p:"Flipkart", i:"🏪",price:base-1500, orig:base+5000,trust:9.1,safety:"safe"},
+      {p:"Meesho",   i:"🛍️",price:base-9000, orig:base+5000,trust:3.1,safety:"danger"},
+    ];
+  }
+
+  // Platform filter
+  if (state.currentPlatform !== "all") {
+    const pf = state.currentPlatform;
+    const filtered = results.filter(r=>r.p.toLowerCase().includes(pf));
+    if (filtered.length) results = filtered;
+  }
+
+  const bestPrice  = Math.min(...results.map(r=>r.price));
+  const worstPrice = Math.max(...results.map(r=>r.price));
+  const bestPlat   = results.find(r=>r.price===bestPrice).p;
+  const maxSave    = worstPrice - bestPrice;
+
+  let html = '<div style="padding:0 20px;margin-bottom:12px;">'
+    +'<div style="background:linear-gradient(135deg,#0a1a0e,#161618);border:1px solid rgba(196,238,208,.2);border-radius:20px;padding:18px 20px;display:flex;justify-content:space-between;align-items:center;">'
+    +'<div><div style="font-size:10px;color:#9aa0a6;text-transform:uppercase;letter-spacing:.8px;margin-bottom:4px;">Best Price Found</div>'
+    +'<div style="font-family:DM Serif Display,serif;font-size:30px;color:#c4eed0;line-height:1;">₹'+bestPrice.toLocaleString("en-IN")+'</div>'
+    +'<div style="font-size:12px;color:#9aa0a6;margin-top:3px;">on '+bestPlat+'</div></div>'
+    +'<div style="text-align:right;"><div style="font-size:10px;color:#9aa0a6;text-transform:uppercase;letter-spacing:.8px;margin-bottom:4px;">You Save</div>'
+    +'<div style="font-size:22px;font-weight:700;color:#8ab4f8;">₹'+maxSave.toLocaleString("en-IN")+'</div>'
+    +'<div style="font-size:11px;color:#9aa0a6;margin-top:2px;">'+Math.round(maxSave/worstPrice*100)+'% cheaper</div></div>'
+    +'</div></div>'
+    +'<div style="padding:0 20px;margin-bottom:12px;background:#161618;border-radius:12px;margin:0 20px 12px;padding:10px 14px;font-size:12px;color:#9aa0a6;display:flex;align-items:center;gap:6px;border:1px solid rgba(255,255,255,.06);">'
+    +'📈 Price history: <strong style="color:#c4eed0;">Lowest in 6 months</strong> on '+bestPlat+'. Next sale in ~18 days.'
+    +'</div>';
+
+  results.forEach(r => {
+    const isBest = r.price===bestPrice;
+    const c = {safe:"#c4eed0",warn:"#ffd166",danger:"#ff6b6b"}[r.safety];
+    const ti= {safe:"✅",warn:"⚠️",danger:"🚨"}[r.safety];
+    const tl= {safe:"Verified",warn:"Caution",danger:"SCAM RISK"}[r.safety];
+    const save = r.orig - r.price;
+    const disc = save>0 ? Math.round(save/r.orig*100) : 0;
+    html += '<div class="price-result '+(isBest?"best":r.safety==="danger"?"scam":"")+'" onclick="showToast(\'Opening '+r.p+'... (demo)\',\'\')">'
+      +(isBest?'<div class="best-label">BEST PRICE</div>':'')
+      +'<div class="plat-logo">'+r.i+'</div>'
+      +'<div class="price-info"><div class="plat-name">'+r.p+'</div>'
+      +'<div class="price-num" style="color:'+(isBest?"#c4eed0":"#f0f2f6")+'">₹'+r.price.toLocaleString("en-IN")+'</div>'
+      +(save>0?'<span class="price-orig">₹'+r.orig.toLocaleString("en-IN")+'</span><span class="price-discount">–'+disc+'% off</span>':'')
+      +'</div>'
+      +'<div style="text-align:right;">'
+      +'<div class="trust-badge" style="background:'+c+'15;color:'+c+';border:1px solid '+c+'30;">'+ti+' '+tl+'</div>'
+      +'<div style="font-size:10px;color:#5f6368;margin-top:4px;">Trust: '+r.trust+'/10</div>'
+      +'</div></div>';
+  });
+
+  const scamCount = results.filter(r=>r.safety==="danger").length;
+  if (scamCount) {
+    html += '<div style="margin:0 20px 12px;background:rgba(255,107,107,.06);border:1px solid rgba(255,107,107,.25);border-radius:18px;padding:16px 18px;">'
+      +'<div style="font-size:14px;font-weight:700;color:#ff6b6b;margin-bottom:6px;">🚨 '+scamCount+' listing(s) flagged as SCAM RISK</div>'
+      +'<div style="font-size:12px;color:#9aa0a6;line-height:1.6;">These sellers are priced <strong style="color:#f0f2f6;">60%+ below market average</strong> with zero verifiable reviews. Do NOT purchase — likely phishing sites.</div>'
+      +'</div>';
+  }
+
+  html += '<div style="display:flex;gap:8px;padding:0 20px 8px;">'
+    +'<button class="btn-sm" style="flex:1;background:#c4eed015;color:#c4eed0;border:1px solid #c4eed030;" onclick="showToast(\'🛒 Opening '+bestPlat+'...\',\'\')">🛒 Buy Now</button>'
+    +'<button class="btn-sm" style="flex:1;background:#8ab4f815;color:#8ab4f8;border:1px solid #8ab4f830;" onclick="showToast(\'🔔 Price alert set for ₹'+(bestPrice-500).toLocaleString("en-IN")+'\',\'info\')">🔔 Alert</button>'
+    +'<button class="btn-sm" style="flex:1;background:#c77dff15;color:#c77dff;border:1px solid #c77dff30;" onclick="showToast(\'📤 Deal copied!\',\'success\')">📤 Share</button>'
+    +'</div>';
+
+  document.getElementById("price-results").innerHTML = html;
+}
+
+// ═══════════════════════════════════════════════════════
+//  SUBSCRIPTIONS
+// ═══════════════════════════════════════════════════════
+function initSubs() {
+  buildSubSummary();
+  renderSubList();
+  buildNegScripts();
+}
+
+function buildSubSummary() {
+  const live = SUBS.filter(s=>!state.cancelled.includes(s.id));
+  const total   = live.filter(s=>s.kind!=="trial").reduce((a,s)=>a+s.price,0);
+  const zombies = live.filter(s=>s.kind==="zombie");
+  const drain   = zombies.reduce((a,s)=>a+s.price,0);
+  const trials  = live.filter(s=>s.kind==="trial").length;
+  const groups  = live.filter(s=>s.group).length;
+  const active  = live.filter(s=>s.kind==="active").length;
+  document.getElementById("sub-summary-card").innerHTML =
+    '<div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:16px;">'
+    +'<div><div style="font-size:11px;color:#9aa0a6;margin-bottom:4px;">Total Monthly</div>'
+    +'<div style="font-family:DM Serif Display,serif;font-size:36px;color:#8ab4f8;line-height:1;">₹'+total.toLocaleString("en-IN")+'</div>'
+    +'<div style="font-size:11px;color:#9aa0a6;margin-top:4px;">across '+live.length+' subscriptions</div></div>'
+    +'<div style="background:rgba(196,238,208,.1);border:1px solid rgba(196,238,208,.2);border-radius:14px;padding:12px 16px;text-align:center;">'
+    +'<div style="font-size:10px;color:#9aa0a6;margin-bottom:3px;">Savings Available</div>'
+    +'<div style="font-size:20px;font-weight:700;color:#c4eed0;">₹'+drain.toLocaleString("en-IN")+'/mo</div>'
+    +'<div style="font-size:9px;color:#5f6368;margin-top:2px;">from zombie subs</div></div></div>'
+    +'<div style="display:flex;gap:8px;">'
+    +'<div style="flex:1;background:rgba(255,107,107,.08);border:1px solid rgba(255,107,107,.15);border-radius:12px;padding:10px;text-align:center;"><div style="font-size:9px;color:#9aa0a6;margin-bottom:3px;">🧟 Zombies</div><div style="font-size:20px;font-weight:700;color:#ff6b6b;">'+zombies.length+'</div></div>'
+    +'<div style="flex:1;background:rgba(255,209,102,.08);border:1px solid rgba(255,209,102,.15);border-radius:12px;padding:10px;text-align:center;"><div style="font-size:9px;color:#9aa0a6;margin-bottom:3px;">⏰ Trials</div><div style="font-size:20px;font-weight:700;color:#ffd166;">'+trials+'</div></div>'
+    +'<div style="flex:1;background:rgba(199,125,255,.08);border:1px solid rgba(199,125,255,.15);border-radius:12px;padding:10px;text-align:center;"><div style="font-size:9px;color:#9aa0a6;margin-bottom:3px;">👥 Group</div><div style="font-size:20px;font-weight:700;color:#c77dff;">'+groups+'</div></div>'
+    +'<div style="flex:1;background:rgba(138,180,248,.08);border:1px solid rgba(138,180,248,.15);border-radius:12px;padding:10px;text-align:center;"><div style="font-size:9px;color:#9aa0a6;margin-bottom:3px;">✅ Active</div><div style="font-size:20px;font-weight:700;color:#8ab4f8;">'+active+'</div></div>'
+    +'</div>';
+}
+
+function filterSubs(el) {
+  document.querySelectorAll("[data-sf]").forEach(c=>c.classList.remove("active"));
+  el.classList.add("active");
+  state.currentSubFilter = el.dataset.sf;
+  renderSubList();
+}
+
+function renderSubList() {
+  const live = SUBS.filter(s=>!state.cancelled.includes(s.id));
+  const f = state.currentSubFilter;
+  let shown = live;
+  if (f==="zombie") shown = live.filter(s=>s.kind==="zombie");
+  else if (f==="trial")  shown = live.filter(s=>s.kind==="trial");
+  else if (f==="group")  shown = live.filter(s=>s.group);
+  else if (f==="active") shown = live.filter(s=>s.kind==="active");
+
+  if (!shown.length) {
+    document.getElementById("sub-list").innerHTML =
+      '<div style="text-align:center;padding:40px 24px;"><div style="font-size:44px;margin-bottom:10px;">🎉</div><div style="font-size:16px;font-weight:600;">All clear here!</div></div>';
+    return;
+  }
+
+  let html = "";
+  shown.forEach(sub => {
+    const alt = ALTS[sub.id];
+    let badges = "";
+    if (sub.kind==="zombie") badges += '<span class="sub-badge" style="background:rgba(255,107,107,.12);color:#ff6b6b;">🧟 '+sub.unused+'d unused</span>';
+    if (sub.kind==="trial")  badges += '<span class="sub-badge" style="background:rgba(255,209,102,.12);color:#ffd166;">⏰ '+sub.billing+'</span>';
+    if (sub.group)           badges += '<span class="sub-badge" style="background:rgba(199,125,255,.12);color:#c77dff;">👥 Group</span>';
+    const altNote = alt ? '<div style="font-size:10px;color:#8ab4f8;margin-top:4px;">💡 Alt: '+alt[0]+' ('+alt[1]+')</div>' : "";
+    const isOpen = state.openSubId===sub.id;
+
+    html += '<div class="sub-item '+(sub.kind==="zombie"?"zombie":sub.kind==="trial"?"trial":"")+'" onclick="toggleSubActions(\''+sub.id+'\')">'
+      +'<div class="sub-logo" style="background:'+sub.color+';">'+sub.icon+'</div>'
+      +'<div class="sub-info"><div class="sub-name">'+sub.name+'</div>'
+      +'<div class="sub-meta">Bills on the '+sub.billing+'</div>'
+      +(badges?'<div style="display:flex;gap:4px;flex-wrap:wrap;margin-top:3px;">'+badges+'</div>':'')+altNote+'</div>'
+      +'<div class="sub-price"><div class="sub-amt">₹'+sub.price.toLocaleString("en-IN")+'</div><div class="sub-cycle">/mo</div></div>'
+      +'</div>';
+
+    if (sub.kind==="zombie"||sub.kind==="trial"||sub.group) {
+      const altBtn = alt
+        ? '<button class="btn-sm" style="flex:1;background:#8ab4f815;color:#8ab4f8;border:1px solid #8ab4f830;" onclick="event.stopPropagation();showToast(\'💡 '+alt[0]+' is free at '+alt[2]+'\',\'info\')">🔄 '+alt[0]+'</button>'
+        : sub.group
+          ? '<button class="btn-sm" style="flex:1;background:#c77dff15;color:#c77dff;border:1px solid #c77dff30;" onclick="event.stopPropagation();showToast(\'📲 WhatsApp invite sent for Family Plan!\',\'info\')">👥 Family Plan</button>'
+          : '<button class="btn-sm" style="flex:1;background:#8ab4f815;color:#8ab4f8;border:1px solid #8ab4f830;" onclick="event.stopPropagation();showToast(\'🔔 Reminder set 3 days before billing\',\'info\')">🔔 Remind</button>';
+
+      html += '<div class="sub-actions '+(isOpen?"open":"")+'" id="actions-'+sub.id+'">'
+        +'<button class="btn-sm" style="flex:1;background:rgba(255,107,107,.15);color:#ff6b6b;border:1px solid rgba(255,107,107,.3);" onclick="event.stopPropagation();cancelSub(\''+sub.id+'\','+sub.price+',\''+sub.name+'\')">❌ Cancel</button>'
+        +'<button class="btn-sm" style="flex:1;background:rgba(255,209,102,.12);color:#ffd166;border:1px solid rgba(255,209,102,.25);" onclick="event.stopPropagation();showToast(\'⏸️ '+sub.name+' paused 1 month\',\'info\')">⏸️ Pause</button>'
+        + altBtn
+        +'</div>';
+    }
+  });
+  document.getElementById("sub-list").innerHTML = html;
+}
+
+function toggleSubActions(id) {
+  if (state.openSubId===id) { state.openSubId=null; } else { state.openSubId=id; }
+  renderSubList();
+}
+
+function cancelSub(id, price, name) {
+  if (!state.cancelled.includes(id)) state.cancelled.push(id);
+  showToast("✅ " + name + " cancelled! Saving ₹" + price.toLocaleString("en-IN") + "/mo", "success");
+  state.openSubId = null;
+  buildSubSummary();
+  renderSubList();
+  refreshHome();
+  refreshProfile();
+}
+
+function addNewSub() {
+  const n = document.getElementById("new-sub-name").value.trim();
+  const p = document.getElementById("new-sub-price").value;
+  if (!n||!p) { showToast("Enter a name and monthly cost","error"); return; }
+  showToast("✅ " + n + " (₹" + parseInt(p).toLocaleString("en-IN") + "/mo) added!", "success");
+  document.getElementById("new-sub-name").value="";
+  document.getElementById("new-sub-price").value="";
+}
+
+function buildNegScripts() {
+  document.getElementById("neg-scripts").innerHTML = NEG_SCRIPTS.map((s,i)=>
+    '<div class="neg-card">'
+    +'<div class="neg-head" onclick="toggleNeg('+i+')">'
+    +'<span style="font-size:20px;">'+s.title.slice(0,2)+'</span>'
+    +'<div style="flex:1;"><div style="font-size:13px;font-weight:600;">'+s.title+'</div><div style="font-size:11px;color:#9aa0a6;margin-top:2px;">'+s.sub+'</div></div>'
+    +'<span id="neg-arrow-'+i+'" style="color:#5f6368;transition:transform .2s;">›</span>'
+    +'</div>'
+    +'<div class="neg-body" id="neg-body-'+i+'">'+s.script+'<br><br><button class="btn-sm" style="background:#8ab4f815;color:#8ab4f8;border:1px solid #8ab4f830;margin-top:6px;" onclick="showToast(\'📋 Script copied!\',\'info\')">📋 Copy Script</button></div>'
+    +'</div>'
+  ).join("");
+}
+
+function toggleNeg(i) {
+  const body  = document.getElementById("neg-body-"+i);
+  const arrow = document.getElementById("neg-arrow-"+i);
+  const open  = body.classList.toggle("open");
+  arrow.style.transform = open ? "rotate(90deg)" : "rotate(0)";
+}
+
+// ═══════════════════════════════════════════════════════
+//  ANALYTICS
+// ═══════════════════════════════════════════════════════
+function initAnalytics() {
+  updateMoodScore();
+  buildCatBars();
+  buildInsights();
+  if (!state.chartsInit) {
+    setTimeout(()=>{ buildBarChart(); buildDonutChart(); state.chartsInit=true; }, 100);
+  } else {
+    if (state.barChart)   state.barChart.update();
+    if (state.donutChart) state.donutChart.update();
+  }
+  setTimeout(()=>{ document.getElementById("mood-bar").style.width = getMoodScore()+"%"; },200);
+}
+
+function getMoodScore() {
+  const zombieRem = SUBS.filter(s=>s.kind==="zombie"&&!state.cancelled.includes(s.id)).length;
+  return Math.min(97, 74 + state.cancelled.length*7 - zombieRem*2);
+}
+
+function updateMoodScore() {
+  const score = getMoodScore();
+  const el = document.getElementById("mood-number");
+  el.textContent = score;
+  let label, color, tip;
+  if (score>=85){ label="Excellent 🌟"; color="#c4eed0"; tip="Outstanding financial health!"; }
+  else if (score>=70){ label="Good 👍"; color="#8ab4f8"; tip="Cancel zombie subs to reach 90+"; }
+  else if (score>=50){ label="Fair ⚠️"; color="#ffd166"; tip="3 zombie subs dragging your score"; }
+  else { label="At Risk 🚨"; color="#ff6b6b"; tip="Immediate action needed"; }
+  el.style.color=color;
+  document.getElementById("mood-label").textContent=label;
+  document.getElementById("mood-label").style.color=color;
+  document.getElementById("mood-tip").textContent=tip;
+}
+
+function buildBarChart() {
+  const ctx = document.getElementById("barChart").getContext("2d");
+  if (state.barChart) state.barChart.destroy();
+  state.barChart = new Chart(ctx, {
+    type:"bar",
+    data:{
+      labels: MONTHLY.map(d=>d.m),
+      datasets:[{
+        data: MONTHLY.map(d=>d.v),
+        backgroundColor: MONTHLY.map(d=>d.cur?"rgba(196,238,208,.85)":"rgba(138,180,248,.45)"),
+        borderRadius:8, borderSkipped:false,
+      }]
+    },
+    options:{
+      responsive:true, maintainAspectRatio:false,
+      plugins:{legend:{display:false},tooltip:{
+        callbacks:{label:c=>"₹"+c.parsed.y.toLocaleString("en-IN")},
+        backgroundColor:"#26272b",titleColor:"#f0f2f6",bodyColor:"#9aa0a6",
+        borderColor:"rgba(255,255,255,.08)",borderWidth:1,padding:10,cornerRadius:10,
+      }},
+      scales:{
+        x:{grid:{display:false},ticks:{color:"#9aa0a6",font:{family:"DM Sans",size:11}}},
+        y:{grid:{color:"rgba(255,255,255,.04)"},ticks:{color:"#5f6368",font:{size:10},callback:v=>"₹"+v/1000+"K"}},
+      }
+    }
+  });
+}
+
+function buildDonutChart() {
+  const ctx = document.getElementById("donutChart").getContext("2d");
+  if (state.donutChart) state.donutChart.destroy();
+  state.donutChart = new Chart(ctx, {
+    type:"doughnut",
+    data:{
+      labels: CATS.map(c=>c.name),
+      datasets:[{data:CATS.map(c=>c.amt),backgroundColor:CATS.map(c=>c.color),borderWidth:2,borderColor:"#0d0d0f",hoverOffset:6}]
+    },
+    options:{
+      cutout:"64%", responsive:false, maintainAspectRatio:false,
+      plugins:{legend:{display:false},tooltip:{
+        callbacks:{label:c=>"₹"+c.parsed.toLocaleString("en-IN")},
+        backgroundColor:"#26272b",titleColor:"#f0f2f6",bodyColor:"#9aa0a6",
+        borderColor:"rgba(255,255,255,.08)",borderWidth:1,padding:8,cornerRadius:10,
+      }},
+    },
+    plugins:[{id:"center",beforeDraw(chart){
+      const {ctx,chartArea:{left,right,top,bottom}}=chart;
+      const cx=(left+right)/2, cy=(top+bottom)/2;
+      ctx.save();
+      ctx.font="700 13px 'DM Serif Display'";
+      ctx.fillStyle="#f0f2f6";
+      ctx.textAlign="center";
+      const t=CATS.reduce((a,c)=>a+c.amt,0);
+      ctx.fillText("₹"+Math.round(t/1000)+"K",cx,cy-4);
+      ctx.font="500 9px DM Sans";
+      ctx.fillStyle="#9aa0a6";
+      ctx.fillText("Total",cx,cy+11);
+      ctx.restore();
+    }}]
+  });
+  // Legend
+  document.getElementById("donut-legend").innerHTML = CATS.map(c=>
+    '<div style="display:flex;align-items:center;gap:8px;margin-bottom:9px;">'
+    +'<div style="width:9px;height:9px;border-radius:50%;background:'+c.color+';flex-shrink:0;"></div>'
+    +'<div style="font-size:12px;flex:1;color:#9aa0a6;">'+c.name+'</div>'
+    +'<div style="font-size:12px;font-weight:600;">₹'+c.amt.toLocaleString("en-IN")+'</div>'
+    +'</div>'
+  ).join("");
+}
+
+function buildCatBars() {
+  const total = CATS.reduce((a,c)=>a+c.amt,0);
+  document.getElementById("cat-bars").innerHTML = CATS
+    .slice().sort((a,b)=>b.amt-a.amt)
+    .map(c=>{
+      const pct=Math.round(c.amt/total*100);
+      return '<div class="cat-row">'
+        +'<span class="cat-icon">'+c.icon+'</span>'
+        +'<div class="cat-bar-wrap">'
+        +'<div class="cat-bar-labels"><span class="cat-name">'+c.name+'</span><span class="cat-amt" style="color:'+c.color+';">₹'+c.amt.toLocaleString("en-IN")+'</span></div>'
+        +'<div class="cat-bar-track"><div class="cat-bar" style="background:'+c.color+';width:'+pct+'%;"></div></div>'
+        +'</div>'
+        +'<span class="cat-pct">'+pct+'%</span>'
+        +'</div>';
+    }).join("");
+}
+
+function buildInsights() {
+  document.getElementById("insights-list").innerHTML = INSIGHTS.map(ins=>
+    '<div class="insight-card" style="border-left-color:'+ins.color+';background:linear-gradient(to right,'+ins.color+'08,#161618);" onclick="goTo(\''+ins.dest+'\')">'
+    +'<span class="ins-ico">'+ins.icon+'</span>'
+    +'<div style="flex:1;">'
+    +'<div class="ins-title" style="color:'+ins.color+';">'+ins.title+'</div>'
+    +'<div class="ins-body">'+ins.body+'</div>'
+    +'</div>'
+    +'<button class="ins-fix" style="background:'+ins.color+'18;color:'+ins.color+';" onclick="event.stopPropagation();goTo(\''+ins.dest+'\')">Fix →</button>'
+    +'</div>'
+  ).join("");
+}
+
+// ═══════════════════════════════════════════════════════
+//  PROFILE
+// ═══════════════════════════════════════════════════════
+function refreshProfile() {
+  const n=state.userName, e=state.userEmail, ph=state.userPhone;
+  const saved=12400+state.cancelled.length*650;
+  const liveZ=SUBS.filter(s=>s.kind==="zombie"&&!state.cancelled.includes(s.id)).length;
+  const liveAll=SUBS.filter(s=>!state.cancelled.includes(s.id)).length;
+  document.getElementById("prof-av").textContent=n[0].toUpperCase();
+  document.getElementById("prof-name").textContent=n+" Sharma";
+  document.getElementById("prof-email").textContent="📧 "+e;
+  document.getElementById("prof-phone").textContent="📱 "+ph;
+  document.getElementById("prof-saved").textContent="₹"+saved.toLocaleString("en-IN");
+  document.getElementById("prof-saved-sub").textContent=(5+state.cancelled.length)+" subs cancelled · 12 price deals · 8 scams blocked";
+  document.getElementById("prof-zombie-val").textContent="₹"+(4200+state.cancelled.length*500).toLocaleString("en-IN");
+  document.getElementById("prof-sub-meta").textContent=liveAll+" active · "+liveZ+" zombies";
+  document.getElementById("kpi-saved").textContent="₹"+saved.toLocaleString("en-IN");
+}
+
+function toggleSwitch(el) {
+  el.classList.toggle("on");
+  const isOn=el.classList.contains("on");
+  showToast(isOn?"✅ Feature enabled":"Feature disabled","");
+}
+
+// ═══════════════════════════════════════════════════════
+//  MODALS / SHEETS
+// ═══════════════════════════════════════════════════════
+function openSheet(type) {
+  const bg=document.getElementById("modal-bg");
+  const sheet=document.getElementById("modal-sheet");
+  let content="";
+  if (type==="edit-profile") {
+    content='<div class="sheet-handle"></div>'
+      +'<div class="sheet-title">Edit Profile ✏️</div>'
+      +'<div class="sheet-sub">Update your personal details</div>'
+      +'<div class="row" style="margin-bottom:12px;"><div class="col"><label class="inp-label">Name</label><input class="inp" id="ep-name" value="'+state.userName+' Sharma"></div></div>'
+      +'<div class="form-group"><label class="inp-label">Email</label><input class="inp" id="ep-email" type="email" value="'+state.userEmail+'"></div>'
+      +'<div class="form-group"><label class="inp-label">Phone</label><input class="inp" id="ep-phone" value="'+state.userPhone+'"></div>'
+      +'<div class="form-group"><label class="inp-label">City</label><input class="inp" id="ep-city" value="West Delhi, India"></div>'
+      +'<button class="btn btn-primary" onclick="saveProfile()" style="margin-top:8px;">Save Changes →</button>';
+  } else if (type==="report-issue") {
+    content='<div class="sheet-handle"></div>'
+      +'<div class="sheet-title">Report an Issue ☕</div>'
+      +'<div class="sheet-sub">Tell us what went wrong</div>'
+      +'<div class="form-group"><label class="inp-label">Category</label>'
+      +'<select class="inp" id="issue-cat" style="cursor:pointer;">'
+      +'<option>Wrong price shown</option><option>Subscription not detected</option>'
+      +'<option>Scam detection issue</option><option>App crash / bug</option>'
+      +'<option>Feature request</option><option>Other</option>'
+      +'</select></div>'
+      +'<div class="form-group"><label class="inp-label">Description</label><textarea class="inp" id="issue-desc" rows="4" placeholder="Describe the issue in detail..." style="resize:none;line-height:1.6;"></textarea></div>'
+      +'<button class="btn btn-primary" onclick="submitIssue()">Submit Report →</button>';
+  } else if (type==="add-split") {
+    content='<div class="sheet-handle"></div>'
+      +'<div class="sheet-title">New Split Group 🤝</div>'
+      +'<div class="sheet-sub">Split any subscription with friends</div>'
+      +'<div class="form-group"><label class="inp-label">Subscription</label><input class="inp" id="split-sub" placeholder="e.g. Netflix, Spotify"></div>'
+      +'<div class="form-group"><label class="inp-label">Monthly Cost (₹)</label><input class="inp" id="split-cost" type="number" placeholder="299"></div>'
+      +'<div class="form-group"><label class="inp-label">Members (names)</label><input class="inp" id="split-members" placeholder="Rahul, Priya, Arjun"></div>'
+      +'<button class="btn btn-primary" onclick="createSplit()">Create Split Group →</button>';
+  }
+  sheet.innerHTML=content;
+  bg.classList.add("open");
+}
+
+function closeSheet(e) {
+  if (e && e.target!==document.getElementById("modal-bg")) return;
+  document.getElementById("modal-bg").classList.remove("open");
+}
+
+function saveProfile() {
+  const name=document.getElementById("ep-name").value.trim().split(" ")[0];
+  const email=document.getElementById("ep-email").value.trim();
+  const phone=document.getElementById("ep-phone").value.trim();
+  if (name) state.userName=name.charAt(0).toUpperCase()+name.slice(1);
+  if (email) state.userEmail=email;
+  if (phone) state.userPhone=phone;
+  document.getElementById("modal-bg").classList.remove("open");
+  showToast("✅ Profile updated!","success");
+  refreshProfile();
+}
+
+function submitIssue() {
+  const desc=document.getElementById("issue-desc").value.trim();
+  if (!desc) { showToast("Please describe the issue","error"); return; }
+  document.getElementById("modal-bg").classList.remove("open");
+  showToast("✅ Issue reported! Response in 24hrs","success");
+}
+
+function createSplit() {
+  const sub=document.getElementById("split-sub").value.trim();
+  if (!sub) { showToast("Enter a subscription name","error"); return; }
+  document.getElementById("modal-bg").classList.remove("open");
+  showToast("📲 Split group created! Invite sent","success");
+}
+
+// ═══════════════════════════════════════════════════════
+//  TOAST
+// ═══════════════════════════════════════════════════════
+let _toastTimer;
+function showToast(msg, type) {
+  const t=document.getElementById("toast");
+  t.textContent=msg;
+  t.className="toast show "+(type||"");
+  clearTimeout(_toastTimer);
+  _toastTimer=setTimeout(()=>t.classList.remove("show"),3200);
+}
+
+// ═══════════════════════════════════════════════════════
+//  INIT (hide nav on login)
+// ═══════════════════════════════════════════════════════
+document.getElementById("bottom-nav").style.display="none";
+
+// Clock in status bar
+function updateClock() {
+  const now=new Date();
+  const h=now.getHours().toString().padStart(2,"0");
+  const m=now.getMinutes().toString().padStart(2,"0");
+  document.querySelectorAll(".status-time").forEach(el=>el.textContent=h+":"+m);
+}
+updateClock(); setInterval(updateClock,30000);
+
+// Add status bars to screens
+document.querySelectorAll(".screen:not(#s-login)").forEach(s=>{
+  const bar=document.createElement("div");
+  bar.className="status-bar";
+  bar.innerHTML='<span class="status-time">9:41</span><div class="status-icons"><span>●●●</span><span>WiFi</span><span>🔋</span></div>';
+  s.insertBefore(bar,s.firstChild);
+});
+updateClock();
+</script>
+</body>
+</html>
